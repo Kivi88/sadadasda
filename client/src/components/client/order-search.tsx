@@ -18,7 +18,9 @@ export default function OrderSearch() {
 
   const searchOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
-      const response = await fetch(`/api/orders/${orderId}`);
+      // Remove # prefix if present for the API call
+      const cleanOrderId = orderId.startsWith('#') ? orderId.substring(1) : orderId;
+      const response = await fetch(`/api/orders/${cleanOrderId}`);
       if (!response.ok) {
         throw new Error("Sipariş bulunamadı");
       }
@@ -141,7 +143,14 @@ export default function OrderSearch() {
                     </div>
                     <span className="text-sm font-medium">Sipariş Alındı</span>
                   </div>
-                  <div className={`h-0.5 flex-1 mx-4 ${searchedOrder.status === 'processing' || searchedOrder.status === 'completed' ? 'bg-blue-500' : 'bg-gray-600'}`}></div>
+                  <div className="h-0.5 flex-1 mx-4 bg-gray-600 relative overflow-hidden">
+                    {(searchedOrder.status === 'processing' || searchedOrder.status === 'completed') && (
+                      <div className="absolute inset-0 bg-blue-500"></div>
+                    )}
+                    {searchedOrder.status === 'processing' && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-blue-300 to-blue-500 animate-pulse"></div>
+                    )}
+                  </div>
                   <div className={`flex items-center space-x-2 ${searchedOrder.status === 'processing' ? 'text-blue-400' : searchedOrder.status === 'completed' ? 'text-green-400' : 'text-gray-400'}`}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${searchedOrder.status === 'processing' ? 'bg-blue-500' : searchedOrder.status === 'completed' ? 'bg-green-500' : 'bg-gray-600'}`}>
                       {searchedOrder.status === 'processing' ? (
@@ -152,7 +161,14 @@ export default function OrderSearch() {
                     </div>
                     <span className="text-sm font-medium">İşleniyor</span>
                   </div>
-                  <div className={`h-0.5 flex-1 mx-4 ${searchedOrder.status === 'completed' ? 'bg-green-500' : 'bg-gray-600'}`}></div>
+                  <div className="h-0.5 flex-1 mx-4 bg-gray-600 relative overflow-hidden">
+                    {searchedOrder.status === 'completed' && (
+                      <div className="absolute inset-0 bg-green-500"></div>
+                    )}
+                    {searchedOrder.status === 'processing' && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/50 to-transparent animate-pulse"></div>
+                    )}
+                  </div>
                   <div className={`flex items-center space-x-2 ${searchedOrder.status === 'completed' ? 'text-green-400' : 'text-gray-400'}`}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${searchedOrder.status === 'completed' ? 'bg-green-500' : 'bg-gray-600'}`}>
                       <CheckCircle className="w-4 h-4 text-white" />
