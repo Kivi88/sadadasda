@@ -228,20 +228,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const servicesData = await apiResponse.json();
+      console.log("API yanıt tipi:", typeof servicesData);
+      console.log("API yanıt array mi:", Array.isArray(servicesData));
+      console.log("API yanıt ilk 3 anahtar:", Object.keys(servicesData).slice(0, 3));
       
-      // Yanıtın array olup olmadığını kontrol et
+      let services = servicesData;
+      
+      // Farklı API formatlarını kontrol et
       if (!Array.isArray(servicesData)) {
-        throw new Error("API geçersiz veri formatı döndürdü");
+        if (servicesData.services && Array.isArray(servicesData.services)) {
+          services = servicesData.services;
+          console.log("API yanıt 'services' anahtarında array bulundu");
+        } else if (servicesData.data && Array.isArray(servicesData.data)) {
+          services = servicesData.data;
+          console.log("API yanıt 'data' anahtarında array bulundu");
+        } else if (servicesData.result && Array.isArray(servicesData.result)) {
+          services = servicesData.result;
+          console.log("API yanıt 'result' anahtarında array bulundu");
+        } else {
+          console.log("API yanıt yapısı:", JSON.stringify(servicesData).substring(0, 500) + "...");
+          throw new Error("API geçersiz veri formatı döndürdü - servis listesi bulunamadı");
+        }
       }
 
       let addedCount = 0;
       let processedCount = 0;
-      const totalServices = servicesData.length;
+      const totalServices = services.length;
       const existingServices = await storage.getServicesByApi(id);
       
       console.log(`API'den ${totalServices} servis alındı, işleme başlanıyor...`);
       
-      for (const serviceData of servicesData) {
+      for (const serviceData of services) {
         processedCount++;
         
         // Progress güncellemesi (her 1000 serviste bir)
@@ -250,10 +267,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         try {
-          // Servis zaten mevcut mu kontrol et
-          const serviceId = serviceData.service?.toString() || serviceData.id?.toString();
+          // Servis ID'sini farklı alanlardan al
+          const serviceId = serviceData.service?.toString() || 
+                           serviceData.id?.toString() || 
+                           serviceData.serviceId?.toString() ||
+                           serviceData.service_id?.toString();
           
           if (!serviceId) {
+            console.log("Servis ID bulunamadı, servis:", JSON.stringify(serviceData).substring(0, 200));
             continue; // Service ID yoksa atla
           }
           
@@ -305,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         message: `${addedCount} yeni servis eklendi`, 
         addedCount,
-        totalFromAPI: servicesData.length
+        totalFromAPI: services.length
       });
     } catch (error) {
       console.error("Error fetching services:", error);
