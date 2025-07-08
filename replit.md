@@ -140,6 +140,14 @@ npm run dev      # Start development server
   - Fixed real API order submission to external providers (MedyaBayim API)
   - Improved order tracking with proper external order ID integration
   - Added visual feedback showing remaining key amount after validation
+- July 08, 2025. **Universal API Integration & Flexible Service Fetching**:
+  - Implemented universal API service fetching system supporting any API provider
+  - Added configurable limit controls for service import (0 = unlimited, custom amounts)
+  - Enhanced API format detection for multiple response structures (services/data/result)
+  - Improved service ID mapping from various field names (service, id, serviceId, service_id)
+  - Added test mode for quick API validation (100 services)
+  - Implemented detailed progress reporting with processed/skipped counts
+  - Fixed database connection issues by switching from WebSocket to standard PostgreSQL
 
 ## User Preferences
 

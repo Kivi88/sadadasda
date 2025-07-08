@@ -112,11 +112,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/apis/:id/fetch-services", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const { limit } = req.body; // Limit parametresi al
       const api = await storage.getApi(id);
       
       if (!api) {
         return res.status(404).json({ message: "API bulunamadı" });
       }
+
+      console.log(`API ${api.name} için servis çekme başlatıldı. Limit: ${limit || 'sınırsız'}`);
 
       // API URL'sini normalize et
       let baseUrl = api.url.replace(/\/+$/, ''); // Trailing slash'leri kaldır
@@ -258,12 +261,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`API'den ${totalServices} servis alındı, işleme başlanıyor...`);
       
-      for (const serviceData of services) {
+      // Limit uygula
+      const servicesToProcess = limit && limit > 0 ? services.slice(0, limit) : services;
+      const limitedTotal = servicesToProcess.length;
+      
+      if (limit && limit > 0) {
+        console.log(`Limit uygulandı: ${limitedTotal} servis işlenecek (toplam ${totalServices} servis var)`);
+      }
+      
+      for (const serviceData of servicesToProcess) {
         processedCount++;
         
-        // Progress güncellemesi (her 1000 serviste bir)
-        if (processedCount % 1000 === 0) {
-          console.log(`İşlenen: ${processedCount}/${totalServices} (%${Math.round(processedCount/totalServices*100)})`);
+        // Progress güncellemesi (her 100 serviste bir veya her 1000 serviste bir)
+        const progressStep = limitedTotal <= 1000 ? 100 : 1000;
+        if (processedCount % progressStep === 0) {
+          console.log(`İşlenen: ${processedCount}/${limitedTotal} (%${Math.round(processedCount/limitedTotal*100)})`);
         }
         
         try {
@@ -319,14 +331,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log(`Tamamlandı: ${addedCount} yeni servis eklendi, toplam ${processedCount} servis işlendi.`);
+      
+      if (limit && limit > 0) {
+        console.log(`Not: Limit nedeniyle sadece ${limitedTotal}/${totalServices} servis işlendi.`);
+      }
 
       // API'nin son senkronizasyon zamanını güncelle
       await storage.updateApi(id, { lastSync: new Date() });
 
       res.json({ 
-        message: `${addedCount} yeni servis eklendi`, 
+        message: `${addedCount} yeni servis eklendi${limit ? ` (${limitedTotal}/${totalServices} işlendi)` : ''}`, 
         addedCount,
-        totalFromAPI: services.length
+        totalFromAPI: services.length,
+        processedCount: limitedTotal,
+        skippedCount: limit ? totalServices - limitedTotal : 0
       });
     } catch (error) {
       console.error("Error fetching services:", error);

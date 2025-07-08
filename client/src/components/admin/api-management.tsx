@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TestTube, Edit, Download, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, TestTube, Edit, Download, Trash2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/api";
 import type { Api } from "@shared/schema";
@@ -16,6 +17,7 @@ export default function ApiManagement() {
   const [url, setUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [fetchLimit, setFetchLimit] = useState<number>(0); // 0 = tüm servisler
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -73,8 +75,8 @@ export default function ApiManagement() {
   });
 
   const fetchServicesMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest("POST", `/api/apis/${id}/fetch-services`);
+    mutationFn: async ({ id, limit }: { id: number; limit?: number }) => {
+      const response = await apiRequest("POST", `/api/apis/${id}/fetch-services`, { limit });
       return await response.json();
     },
     onSuccess: (data) => {
@@ -291,16 +293,67 @@ export default function ApiManagement() {
                           <TestTube className="w-4 h-4 mr-1" />
                           Test
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fetchServicesMutation.mutate(api.id)}
-                          disabled={fetchServicesMutation.isPending}
-                          className="cpanel-button flex-1 bg-green-600 hover:bg-green-700 text-white border-green-600"
-                        >
-                          <Download className="w-4 h-4 mr-1" />
-                          {fetchServicesMutation.isPending ? "Çekiliyor..." : "Çek"}
-                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="cpanel-button flex-1 bg-green-600 hover:bg-green-700 text-white border-green-600"
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Servis Çek
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-slate-900 border-slate-700">
+                            <DialogHeader>
+                              <DialogTitle className="text-white">
+                                {api.name} - Servis Çekme Ayarları
+                              </DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="fetchLimit" className="text-white">
+                                  Çekilecek Servis Sayısı (0 = Tümü)
+                                </Label>
+                                <Input
+                                  id="fetchLimit"
+                                  type="number"
+                                  min="0"
+                                  max="10000"
+                                  value={fetchLimit}
+                                  onChange={(e) => setFetchLimit(parseInt(e.target.value) || 0)}
+                                  placeholder="0 (tüm servisler için)"
+                                  className="bg-slate-800 border-slate-600 text-white"
+                                />
+                                <p className="text-sm text-slate-400 mt-1">
+                                  Test için küçük sayılar (10-100) önerilir
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() => {
+                                    fetchServicesMutation.mutate({ 
+                                      id: api.id, 
+                                      limit: fetchLimit || undefined 
+                                    });
+                                  }}
+                                  disabled={fetchServicesMutation.isPending}
+                                  className="bg-green-600 hover:bg-green-700 text-white flex-1"
+                                >
+                                  <Download className="w-4 h-4 mr-1" />
+                                  {fetchServicesMutation.isPending ? "Çekiliyor..." : "Başlat"}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setFetchLimit(100)}
+                                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                                >
+                                  Test (100)
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                       <div className="flex gap-2">
                         <Button
