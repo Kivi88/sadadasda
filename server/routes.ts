@@ -373,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/keys", async (req, res) => {
     try {
-      const { serviceId, name, prefix = "KIWIPAZARI", count = 1 } = req.body;
+      const { serviceId, name, prefix = "KIWIPAZARI", count = 1, maxAmount = 1000 } = req.body;
       
       if (!serviceId || !name) {
         return res.status(400).json({ message: "Servis ID ve isim gerekli" });
@@ -387,6 +387,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           serviceId,
           name: count > 1 ? `${name}-${i + 1}` : name,
           prefix,
+          maxAmount,
+          usedAmount: 0,
           isActive: true,
           isHidden: false,
         };
@@ -493,6 +495,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Key miktar kontrolü
+      const remainingAmount = (key.maxAmount || 1000) - (key.usedAmount || 0);
+      if (quantity > remainingAmount) {
+        return res.status(400).json({ 
+          message: `Bu key için kalan miktar: ${remainingAmount}. Maksimum ${remainingAmount} adet sipariş verebilirsiniz.` 
+        });
+      }
+
+      // Get API info
+      const api = await storage.getApi(service.apiId!);
+      if (!api) {
+        return res.status(400).json({ message: "API bulunamadı" });
+      }
+
+      // API'ye sipariş gönder
+      let externalOrderId = null;
+      let orderStatus = "pending";
+      
+      try {
+        const apiUrl = `${api.baseUrl}/v1/add`;
+        const apiData = {
+          key: api.apiKey,
+          service: service.externalId,
+          link: link,
+          quantity: quantity
+        };
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(apiData)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          externalOrderId = result.order || result.id || null;
+          orderStatus = "processing";
+          
+          // Key'in kullanılan miktarını güncelle
+          await storage.updateKey(key.id, {
+            usedAmount: (key.usedAmount || 0) + quantity
+          });
+        } else {
+          const errorData = await response.json().catch(() => ({ error: "API hatası" }));
+          console.error("API sipariş hatası:", errorData);
+          // Yine de siparişi kaydet ama hata durumunda
+          orderStatus = "failed";
+        }
+      } catch (error) {
+        console.error("API bağlantı hatası:", error);
+        // API'ye ulaşılamıyorsa da siparişi kaydet
+        orderStatus = "failed";
+      }
+
       const orderId = generateOrderId();
       const orderData = {
         orderId,
@@ -500,7 +558,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         serviceId: service.id,
         link,
         quantity,
-        status: "pending",
+        status: orderStatus,
+        externalOrderId,
       };
 
       const order = await storage.createOrder(orderData);

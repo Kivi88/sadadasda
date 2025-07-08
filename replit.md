@@ -113,6 +113,13 @@ npm run dev      # Start development server
 - July 08, 2025. Fixed API service fetching to properly connect to external APIs and fetch all available services (removed mock fallback)
 - July 08, 2025. Fixed API key field mapping issue and removed invalid price field - now successfully imports all 4,802+ services from MedyaBayim API
 - July 08, 2025. Fixed API service fetching to use v1 endpoints instead of v2, improved error handling and added multiple endpoint testing strategies
+- July 08, 2025. **Major Feature Update**: 
+  - Added max amount limits to keys (prevents users from ordering more than allowed)
+  - Implemented real API order submission to external providers (MedyaBayim)
+  - Added order ID copy functionality throughout the system
+  - Created success modal with auto-redirect to order search after order creation
+  - Enhanced service search with both name and external ID support
+  - All orders now properly sync with external APIs and track real order status
 
 ## User Preferences
 

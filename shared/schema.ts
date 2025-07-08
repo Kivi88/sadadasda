@@ -35,6 +35,8 @@ export const keys = pgTable("keys", {
   serviceId: integer("service_id").references(() => services.id),
   name: text("name").notNull(),
   prefix: text("prefix").default("KIWIPAZARI"),
+  maxAmount: integer("max_amount").default(1000),
+  usedAmount: integer("used_amount").default(0),
   isActive: boolean("is_active").default(true),
   isHidden: boolean("is_hidden").default(false),
   createdAt: timestamp("created_at").defaultNow(),

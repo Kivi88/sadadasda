@@ -17,6 +17,7 @@ export default function KeyManagement() {
   const [serviceSearch, setServiceSearch] = useState("");
   const [keyName, setKeyName] = useState("");
   const [keyCount, setKeyCount] = useState(1);
+  const [maxAmount, setMaxAmount] = useState(1000);
   const [hiddenKeys, setHiddenKeys] = useState<Set<number>>(new Set());
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -62,7 +63,7 @@ export default function KeyManagement() {
   }, []);
 
   const createKeysMutation = useMutation({
-    mutationFn: async (data: { serviceId: number; name: string; count: number }) => {
+    mutationFn: async (data: { serviceId: number; name: string; count: number; maxAmount: number }) => {
       return await apiRequest("POST", "/api/keys", data);
     },
     onSuccess: () => {
@@ -74,6 +75,7 @@ export default function KeyManagement() {
       setSelectedService("");
       setKeyName("");
       setKeyCount(1);
+      setMaxAmount(1000);
     },
     onError: (error) => {
       toast({
@@ -134,6 +136,7 @@ export default function KeyManagement() {
       serviceId: parseInt(selectedService),
       name: keyName,
       count: keyCount,
+      maxAmount: maxAmount,
     });
   };
 
@@ -241,6 +244,18 @@ export default function KeyManagement() {
                   onChange={(e) => setKeyCount(parseInt(e.target.value) || 1)}
                   min="1"
                   max="100"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="maxAmount">Maksimum Miktar</Label>
+                <Input
+                  id="maxAmount"
+                  type="number"
+                  value={maxAmount}
+                  onChange={(e) => setMaxAmount(Number(e.target.value))}
+                  placeholder="Maksimum miktar..."
+                  min="1"
                 />
               </div>
             </div>

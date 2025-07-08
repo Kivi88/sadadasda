@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingCart } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ShoppingCart, Copy, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/api";
+import { useLocation } from "wouter";
 import type { Service } from "@shared/schema";
 
 interface OrderFormProps {
@@ -18,8 +20,11 @@ interface OrderFormProps {
 export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFormProps) {
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState(service.minQuantity || 1);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<any>(null);
   
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: { keyValue: string; link: string; quantity: number }) => {
@@ -27,18 +32,11 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
       return response.json();
     },
     onSuccess: (order) => {
-      toast({
-        title: "Sipariş Oluşturuldu",
-        description: `Sipariş başarıyla oluşturuldu! ID: ${order.orderId}`,
-      });
-      
-      // Auto-fill the search input with the new order ID
-      const searchInput = document.getElementById("orderSearchId") as HTMLInputElement;
-      if (searchInput) {
-        searchInput.value = order.orderId;
-      }
-      
+      setCreatedOrder(order);
+      setShowSuccessModal(true);
       onOrderCreated();
+      setLink("");
+      setQuantity(service.minQuantity || 1);
     },
     onError: (error) => {
       toast({
@@ -48,6 +46,29 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
       });
     },
   });
+
+  const copyOrderId = async () => {
+    if (!createdOrder?.orderId) return;
+    
+    try {
+      await navigator.clipboard.writeText(createdOrder.orderId);
+      toast({
+        title: "Kopyalandı",
+        description: "Sipariş ID panoya kopyalandı",
+      });
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Kopyalama başarısız",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const goToOrderSearch = () => {
+    setShowSuccessModal(false);
+    navigate("/order-search");
+  };
 
   const handleCreateOrder = () => {
     if (!link.trim() || !quantity) {
@@ -109,6 +130,49 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
           {createOrderMutation.isPending ? "Oluşturuluyor..." : "Sipariş Oluştur"}
         </Button>
       </CardContent>
+
+      {/* Başarı Modal'ı */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-green-600">
+              🎉 Sipariş Başarıyla Oluşturuldu!
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-2">Sipariş ID'niz:</p>
+              <div className="flex items-center justify-center space-x-2 p-3 bg-muted rounded-lg">
+                <code className="font-mono text-lg font-semibold">
+                  {createdOrder?.orderId}
+                </code>
+                <Button size="sm" variant="outline" onClick={copyOrderId}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex flex-col space-y-2">
+              <Button onClick={goToOrderSearch} className="w-full">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Sipariş Sorgula Sayfasına Git
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full"
+              >
+                Kapat
+              </Button>
+            </div>
+            
+            <div className="text-xs text-muted-foreground text-center">
+              Sipariş durumunuzu takip etmek için ID'nizi saklayın
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

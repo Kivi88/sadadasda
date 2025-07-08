@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, X } from "lucide-react";
+import { Search, X, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/api";
 import type { Order } from "@shared/schema";
@@ -46,6 +46,22 @@ export default function OrderSearch() {
     }
 
     searchOrderMutation.mutate(orderId.trim());
+  };
+
+  const copyOrderId = async (orderIdToCopy: string) => {
+    try {
+      await navigator.clipboard.writeText(orderIdToCopy);
+      toast({
+        title: "Kopyalandı",
+        description: "Sipariş ID panoya kopyalandı",
+      });
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Kopyalama başarısız",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -113,7 +129,17 @@ export default function OrderSearch() {
               <div className="bg-muted/50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">Sipariş ID:</span>
-                  <span className="font-mono text-sm">{searchedOrder.orderId}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono text-sm">{searchedOrder.orderId}</span>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => copyOrderId(searchedOrder.orderId)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">Link:</span>
