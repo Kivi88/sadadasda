@@ -468,9 +468,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/orders", async (req, res) => {
     try {
-      const { keyValue, link, quantity } = req.body;
+      const { keyValue, link, quantity, serviceId } = req.body;
       
-      if (!keyValue || !link || !quantity) {
+      if (!keyValue || !link || !quantity || !serviceId) {
         return res.status(400).json({ message: "Tüm alanlar gerekli" });
       }
 
@@ -480,10 +480,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Geçersiz key" });
       }
 
-      // Get service
-      const service = await storage.getService(key.serviceId!);
+      // Get service using the provided serviceId
+      const service = await storage.getService(serviceId);
       if (!service || !service.isActive) {
         return res.status(400).json({ message: "Servis aktif değil" });
+      }
+
+      // Verify the key is valid for this service (optional additional validation)
+      if (key.serviceId && key.serviceId !== serviceId) {
+        return res.status(400).json({ message: "Bu key seçilen servis için geçerli değil" });
       }
 
       // Validate quantity
@@ -535,6 +540,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           externalOrderId = result.order || result.id || null;
           orderStatus = "processing";
           
+          console.log(`Sipariş API'ye başarıyla gönderildi. External Order ID: ${externalOrderId}`);
+          
           // Key'in kullanılan miktarını güncelle
           await storage.updateKey(key.id, {
             usedAmount: (key.usedAmount || 0) + quantity
@@ -542,11 +549,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           const errorData = await response.json().catch(() => ({ error: "API hatası" }));
           console.error("API sipariş hatası:", errorData);
+          
+          // API'den gelen hata mesajını daha detaylı log'la
+          console.error(`API Response Status: ${response.status}, Data:`, errorData);
+          
           // Yine de siparişi kaydet ama hata durumunda
           orderStatus = "failed";
         }
       } catch (error) {
         console.error("API bağlantı hatası:", error);
+        console.error(`API URL: ${api.baseUrl}/v1/add, Service ID: ${service.externalId}`);
         // API'ye ulaşılamıyorsa da siparişi kaydet
         orderStatus = "failed";
       }

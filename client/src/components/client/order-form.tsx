@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,7 +28,7 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
   const [, navigate] = useLocation();
 
   const createOrderMutation = useMutation({
-    mutationFn: async (data: { keyValue: string; link: string; quantity: number }) => {
+    mutationFn: async (data: { keyValue: string; link: string; quantity: number; serviceId: number }) => {
       const response = await apiRequest("POST", "/api/orders", data);
       return response.json();
     },
@@ -70,6 +71,16 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
     navigate("/order-search");
   };
 
+  // Auto redirect after 5 seconds
+  React.useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        goToOrderSearch();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal]);
+
   const handleCreateOrder = () => {
     if (!link.trim() || !quantity) {
       toast({
@@ -84,6 +95,7 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
       keyValue,
       link: link.trim(),
       quantity,
+      serviceId: service.id,
     });
   };
 
@@ -169,6 +181,8 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
             
             <div className="text-xs text-muted-foreground text-center">
               Sipariş durumunuzu takip etmek için ID'nizi saklayın
+              <br />
+              <span className="text-blue-600">5 saniye sonra otomatik yönlendirileceksiniz...</span>
             </div>
           </div>
         </DialogContent>
