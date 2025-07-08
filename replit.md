@@ -110,6 +110,7 @@ npm run dev      # Start development server
 
 ## Changelog
 - July 08, 2025. Initial setup
+- July 08, 2025. Fixed API service fetching to use v1 endpoints instead of v2, improved error handling and added multiple endpoint testing strategies
 
 ## User Preferences
 

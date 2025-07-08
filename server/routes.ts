@@ -118,13 +118,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "API bulunamadı" });
       }
 
-      // API URL'sini v2 olacak şekilde düzenle
+      // API URL'sini v1 olacak şekilde düzenle (medyabayim v1 kullanıyor)
       let baseUrl = api.url;
-      if (baseUrl.includes('/v1')) {
-        baseUrl = baseUrl.replace('/v1', '/v2');
-      } else if (!baseUrl.includes('/v2')) {
-        // Eğer URL'de versiyon yoksa v2 ekle
-        baseUrl = baseUrl.replace(/\/+$/, '') + '/v2';
+      if (baseUrl.includes('/v2')) {
+        baseUrl = baseUrl.replace('/v2', '/v1');
+      } else if (!baseUrl.includes('/v1')) {
+        // Eğer URL'de versiyon yoksa v1 ekle
+        baseUrl = baseUrl.replace(/\/+$/, '') + '/v1';
       }
       
       // Farklı endpoint'leri dene
@@ -133,7 +133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `${baseUrl}/service`,
         `${baseUrl}`,
         `${api.url}/services`,
-        `${api.url}/service`
+        `${api.url}/service`,
+        `${api.url}` // Orijinal URL'i de dene
       ];
       
       let apiResponse = null;
@@ -176,7 +177,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
               break;
             } else {
               console.log(`Başarısız endpoint (GET): ${endpoint} - ${getResponse.status}`);
-              lastError = new Error(`${apiResponse.status} ${apiResponse.statusText}`);
+              
+              // Farklı parametre formatını dene
+              const altResponse = await fetch(`${endpoint}?key=${api.key}`, {
+                method: "GET",
+                headers: {
+                  "User-Agent": "KiwiPazari/1.0"
+                }
+              });
+              
+              if (altResponse.ok) {
+                console.log(`Başarılı endpoint (ALT GET): ${endpoint}`);
+                apiResponse = altResponse;
+                break;
+              } else {
+                console.log(`Başarısız endpoint (ALT GET): ${endpoint} - ${altResponse.status}`);
+                lastError = new Error(`${apiResponse.status} ${apiResponse.statusText}`);
+              }
             }
           }
         } catch (error) {

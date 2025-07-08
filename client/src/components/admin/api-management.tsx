@@ -118,8 +118,8 @@ export default function ApiManagement() {
       description: `${api.name} API'si test ediliyor...`,
     });
     
-    // API URL'sini v2 olacak şekilde düzenle
-    const baseUrl = api.url.replace('/v1', '/v2');
+    // API URL'sini v1 olacak şekilde düzenle
+    const baseUrl = api.url.replace('/v2', '/v1');
     const testUrl = `${baseUrl}/services`;
     const testData = {
       key: api.key,
@@ -191,7 +191,7 @@ export default function ApiManagement() {
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://api.provider.com/v1"
+                  placeholder="https://api.provider.com/v1 (önerilir)"
                 />
               </div>
               
