@@ -235,39 +235,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       let addedCount = 0;
+      let processedCount = 0;
+      const totalServices = servicesData.length;
       const existingServices = await storage.getServicesByApi(id);
       
+      console.log(`API'den ${totalServices} servis alındı, işleme başlanıyor...`);
+      
       for (const serviceData of servicesData) {
-        // Servis zaten mevcut mu kontrol et
-        const serviceId = serviceData.service?.toString() || serviceData.id?.toString();
-        const exists = existingServices.find(s => s.externalId === serviceId);
+        processedCount++;
         
-        if (!exists && serviceId) {
-          // Platform belirle
-          let platform = 'Social Media';
-          const serviceName = serviceData.name || `Servis ${serviceId}`;
+        // Progress güncellemesi (her 1000 serviste bir)
+        if (processedCount % 1000 === 0) {
+          console.log(`İşlenen: ${processedCount}/${totalServices} (%${Math.round(processedCount/totalServices*100)})`);
+        }
+        
+        try {
+          // Servis zaten mevcut mu kontrol et
+          const serviceId = serviceData.service?.toString() || serviceData.id?.toString();
           
-          if (serviceName.toLowerCase().includes('instagram')) platform = 'Instagram';
-          else if (serviceName.toLowerCase().includes('tiktok')) platform = 'TikTok';
-          else if (serviceName.toLowerCase().includes('youtube')) platform = 'YouTube';
-          else if (serviceName.toLowerCase().includes('twitter')) platform = 'Twitter';
-          else if (serviceName.toLowerCase().includes('facebook')) platform = 'Facebook';
-          else if (serviceName.toLowerCase().includes('telegram')) platform = 'Telegram';
+          if (!serviceId) {
+            continue; // Service ID yoksa atla
+          }
           
-          await storage.createService({
-            apiId: id,
-            externalId: serviceId,
-            name: serviceName,
-            platform: platform,
-            category: serviceData.type || serviceData.category || 'Genel',
-            minQuantity: parseInt(serviceData.min) || 1,
-            maxQuantity: parseInt(serviceData.max) || 10000,
-            price: parseFloat(serviceData.rate) || 0.01,
-            isActive: true
-          });
-          addedCount++;
+          const exists = existingServices.find(s => s.externalId === serviceId);
+          
+          if (!exists) {
+            // Platform belirle
+            let platform = 'Social Media';
+            const serviceName = serviceData.name || `Servis ${serviceId}`;
+            
+            if (serviceName.toLowerCase().includes('instagram')) platform = 'Instagram';
+            else if (serviceName.toLowerCase().includes('tiktok')) platform = 'TikTok';
+            else if (serviceName.toLowerCase().includes('youtube')) platform = 'YouTube';
+            else if (serviceName.toLowerCase().includes('twitter')) platform = 'Twitter';
+            else if (serviceName.toLowerCase().includes('facebook')) platform = 'Facebook';
+            else if (serviceName.toLowerCase().includes('telegram')) platform = 'Telegram';
+            else if (serviceName.toLowerCase().includes('linkedin')) platform = 'LinkedIn';
+            else if (serviceName.toLowerCase().includes('snapchat')) platform = 'Snapchat';
+            else if (serviceName.toLowerCase().includes('pinterest')) platform = 'Pinterest';
+            else if (serviceName.toLowerCase().includes('reddit')) platform = 'Reddit';
+            else if (serviceName.toLowerCase().includes('discord')) platform = 'Discord';
+            else if (serviceName.toLowerCase().includes('twitch')) platform = 'Twitch';
+            else if (serviceName.toLowerCase().includes('soundcloud')) platform = 'SoundCloud';
+            else if (serviceName.toLowerCase().includes('spotify')) platform = 'Spotify';
+            
+            await storage.createService({
+              apiId: id,
+              externalId: serviceId,
+              name: serviceName,
+              platform: platform,
+              category: serviceData.type || serviceData.category || 'Genel',
+              minQuantity: parseInt(serviceData.min) || 1,
+              maxQuantity: parseInt(serviceData.max) || 10000,
+              isActive: true
+            });
+            addedCount++;
+          }
+        } catch (serviceError) {
+          console.error(`Servis işlenirken hata (ID: ${serviceData.service || serviceData.id}):`, serviceError.message);
+          continue; // Hata durumunda sonraki servise geç
         }
       }
+      
+      console.log(`Tamamlandı: ${addedCount} yeni servis eklendi, toplam ${processedCount} servis işlendi.`);
 
       // API'nin son senkronizasyon zamanını güncelle
       await storage.updateApi(id, { lastSync: new Date() });
