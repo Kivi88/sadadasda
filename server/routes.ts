@@ -50,14 +50,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Demo servisleri oluştur
       for (const serviceData of demoServices) {
+        let platform = 'Social Media';
+        if (serviceData.name.includes('Instagram')) platform = 'Instagram';
+        else if (serviceData.name.includes('TikTok')) platform = 'TikTok';
+        else if (serviceData.name.includes('YouTube')) platform = 'YouTube';
+        else if (serviceData.name.includes('Twitter')) platform = 'Twitter';
+        else if (serviceData.name.includes('Facebook')) platform = 'Facebook';
+        else if (serviceData.name.includes('Telegram')) platform = 'Telegram';
+        
         await storage.createService({
           apiId: api.id,
           externalId: `${api.id}-${serviceData.name.toLowerCase().replace(/\s+/g, '-')}`,
           name: serviceData.name,
-          platform: serviceData.type === 'followers' ? 'Instagram' : 
-                   serviceData.type === 'likes' ? 'Instagram' : 
-                   serviceData.type === 'subscribers' ? 'YouTube' : 
-                   serviceData.type === 'views' ? 'YouTube' : 'Social Media',
+          platform: platform,
           category: serviceData.type,
           minQuantity: serviceData.minOrder,
           maxQuantity: serviceData.maxOrder,

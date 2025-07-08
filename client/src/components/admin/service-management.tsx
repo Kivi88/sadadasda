@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import type { Service, Api } from "@shared/schema";
 
 export default function ServiceManagement() {
@@ -24,7 +25,9 @@ export default function ServiceManagement() {
       title: "Yenileniyor",
       description: "Servisler güncelleniyor...",
     });
-    // TODO: Implement service refresh from APIs
+    // Invalidate and refetch services
+    queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/apis"] });
   };
 
   const getApiName = (apiId: number) => {
