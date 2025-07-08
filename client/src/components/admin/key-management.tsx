@@ -219,21 +219,21 @@ export default function KeyManagement() {
   };
 
   return (
-    <div className="p-6 fade-in">
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-foreground">Key Yönetimi</h3>
+    <div className="p-8 fade-in">
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-semibold text-foreground">Key Yönetimi</h3>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Key Oluştur</CardTitle>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+          <Card className="shadow-lg">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl">Key Oluştur</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div className="relative" ref={dropdownRef}>
-                  <Label htmlFor="service">Servis Adı veya Servis ID</Label>
+                  <Label htmlFor="service" className="text-sm font-medium mb-2 block">Servis Adı veya Servis ID</Label>
                   <Input
                     id="service"
                     value={serviceSearch}
@@ -243,7 +243,7 @@ export default function KeyManagement() {
                     }}
                     onFocus={() => setShowServiceDropdown(true)}
                     placeholder="Servis adı veya ID girin..."
-                    className="w-full"
+                    className="w-full h-11"
                   />
                   {showServiceDropdown && serviceSearch && filteredServices.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
@@ -268,101 +268,108 @@ export default function KeyManagement() {
                   )}
                 </div>
               
-              <div>
-                <Label htmlFor="keyName">Key Adı</Label>
-                <Input
-                  id="keyName"
-                  value={keyName}
-                  onChange={(e) => setKeyName(e.target.value)}
-                  placeholder="Key adı girin..."
-                />
+                <div>
+                  <Label htmlFor="keyName" className="text-sm font-medium mb-2 block">Key Adı</Label>
+                  <Input
+                    id="keyName"
+                    value={keyName}
+                    onChange={(e) => setKeyName(e.target.value)}
+                    placeholder="Key adı girin..."
+                    className="h-11"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="keyCount" className="text-sm font-medium mb-2 block">Key Sayısı</Label>
+                    <Input
+                      id="keyCount"
+                      type="number"
+                      value={keyCount}
+                      onChange={(e) => setKeyCount(parseInt(e.target.value) || 1)}
+                      min="1"
+                      max="100"
+                      className="h-11"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="maxAmount" className="text-sm font-medium mb-2 block">Maksimum Miktar</Label>
+                    <Input
+                      id="maxAmount"
+                      type="number"
+                      value={maxAmount}
+                      onChange={(e) => setMaxAmount(Number(e.target.value))}
+                      placeholder="Maksimum miktar..."
+                      min="1"
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+                
+                <div className="pt-2">
+                  <Button 
+                    onClick={handleCreateKeys}
+                    disabled={createKeysMutation.isPending}
+                    className="btn-success h-11 px-6"
+                    size="lg"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {createKeysMutation.isPending ? "Oluşturuluyor..." : "Key Oluştur"}
+                  </Button>
+                </div>
               </div>
-              
-              <div>
-                <Label htmlFor="keyCount">Key Sayısı</Label>
-                <Input
-                  id="keyCount"
-                  type="number"
-                  value={keyCount}
-                  onChange={(e) => setKeyCount(parseInt(e.target.value) || 1)}
-                  min="1"
-                  max="100"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="maxAmount">Maksimum Miktar</Label>
-                <Input
-                  id="maxAmount"
-                  type="number"
-                  value={maxAmount}
-                  onChange={(e) => setMaxAmount(Number(e.target.value))}
-                  placeholder="Maksimum miktar..."
-                  min="1"
-                />
-              </div>
-            </div>
-            
-            <div className="mt-4">
-              <Button 
-                onClick={handleCreateKeys}
-                disabled={createKeysMutation.isPending}
-                className="btn-success"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {createKeysMutation.isPending ? "Oluşturuluyor..." : "Key Oluştur"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Key İndir</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <Card className="shadow-lg">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl">Key İndir</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="downloadKeyName">Key Adı</Label>
+                <Label htmlFor="downloadKeyName" className="text-sm font-medium mb-2 block">Key Adı</Label>
                 <Input
                   id="downloadKeyName"
                   value={downloadKeyName}
                   onChange={(e) => setDownloadKeyName(e.target.value)}
                   placeholder="İndirmek istediğiniz key adını girin..."
-                  className="w-full"
+                  className="w-full h-11"
                 />
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-muted-foreground mt-3">
                   Bu ada sahip tüm keyler CSV dosyası olarak indirilecek
                 </p>
               </div>
               
-              <Button 
-                onClick={() => {
-                  if (!downloadKeyName.trim()) {
-                    toast({
-                      title: "Hata",
-                      description: "Lütfen key adını girin",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  downloadKeysMutation.mutate(downloadKeyName.trim());
-                }}
-                disabled={downloadKeysMutation.isPending || !downloadKeyName.trim()}
-                className="btn-primary"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {downloadKeysMutation.isPending ? "İndiriliyor..." : "Keyleri İndir"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              <div className="pt-2">
+                <Button 
+                  onClick={() => {
+                    if (!downloadKeyName.trim()) {
+                      toast({
+                        title: "Hata",
+                        description: "Lütfen key adını girin",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    downloadKeysMutation.mutate(downloadKeyName.trim());
+                  }}
+                  disabled={downloadKeysMutation.isPending || !downloadKeyName.trim()}
+                  className="btn-primary h-11 px-6"
+                  size="lg"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {downloadKeysMutation.isPending ? "İndiriliyor..." : "Keyleri İndir"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Mevcut Keyler</CardTitle>
+      <Card className="shadow-lg">
+        <CardHeader className="pb-6">
+          <CardTitle className="text-xl">Mevcut Keyler</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
