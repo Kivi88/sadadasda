@@ -180,6 +180,12 @@ npm run dev      # Start development server
   - Enhanced order search component with step-by-step progress visualization
   - Orders now automatically sync status with external API providers (MedyaBayim)
   - Fixed issue where orders stayed "processing" despite being completed in external system
+- July 08, 2025. **Order Search UI Simplification**:
+  - Simplified order search display to show basic information without complex animations
+  - Changed status display from badge to simple text format (e.g., "Durum: processing")
+  - Fixed order search API endpoint to use correct /api/orders/search route
+  - Order search now properly handles order IDs with # prefix
+  - Removed complex progress tracker in favor of clean, simple design
 
 ## User Preferences
 
