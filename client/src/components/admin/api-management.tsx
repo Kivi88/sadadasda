@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, TestTube, Edit, Download, Trash2, Settings } from "lucide-react";
+import { Plus, TestTube, Edit, Download, Trash2, Settings, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/api";
 import type { Api } from "@shared/schema";
@@ -91,6 +91,28 @@ export default function ApiManagement() {
       toast({
         title: "Hata",
         description: error.message || "Servisler çekilemedi",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const clearServicesMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/apis/${id}/services`);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Başarılı",
+        description: data.message || "Servisler başarıyla silindi",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/apis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error.message || "Servisler silinemedi",
         variant: "destructive",
       });
     },
@@ -350,6 +372,21 @@ export default function ApiManagement() {
                                 >
                                   Test (100)
                                 </Button>
+                              </div>
+                              <div className="border-t border-slate-700 pt-4">
+                                <Button
+                                  onClick={() => {
+                                    clearServicesMutation.mutate(api.id);
+                                  }}
+                                  disabled={clearServicesMutation.isPending}
+                                  className="bg-red-600 hover:bg-red-700 text-white w-full"
+                                >
+                                  <X className="w-4 h-4 mr-2" />
+                                  {clearServicesMutation.isPending ? "Temizleniyor..." : "Servisleri Temizle"}
+                                </Button>
+                                <p className="text-sm text-slate-400 mt-1">
+                                  Bu API'nin tüm servislerini siler
+                                </p>
                               </div>
                             </div>
                           </DialogContent>

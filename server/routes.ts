@@ -157,6 +157,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all services for an API
+  app.delete("/api/apis/:id/services", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const services = await storage.getServicesByApi(id);
+      
+      console.log(`🗑️ API ${id} için ${services.length} servis siliniyor...`);
+      
+      for (const service of services) {
+        await storage.deleteService(service.id);
+      }
+      
+      console.log(`✅ ${services.length} servis başarıyla silindi`);
+      
+      res.json({ 
+        message: `${services.length} servis silindi`,
+        deletedCount: services.length 
+      });
+    } catch (error) {
+      console.error("Error clearing services:", error);
+      res.status(500).json({ message: "Servisler silinemedi" });
+    }
+  });
+
   // API'den servisleri çekme
   app.post("/api/apis/:id/fetch-services", async (req, res) => {
     try {
@@ -269,44 +293,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!apiResponse || !apiResponse.ok) {
         console.log("Gerçek API'den veri çekilemiyor. Hata:", lastError?.message || "Bilinmeyen hata");
         
-        // Eğer API'den veri çekilemiyorsa, demo servisler ile devam et
-        console.log("Demo servisler ekleniyor...");
-        
-        const demoServices = [
-          { name: "Instagram Takipçi", platform: "Instagram", category: "followers", externalId: "demo-ig-followers" },
-          { name: "Instagram Beğeni", platform: "Instagram", category: "likes", externalId: "demo-ig-likes" },
-          { name: "TikTok Takipçi", platform: "TikTok", category: "followers", externalId: "demo-tt-followers" },
-          { name: "TikTok Beğeni", platform: "TikTok", category: "likes", externalId: "demo-tt-likes" },
-          { name: "YouTube Abone", platform: "YouTube", category: "subscribers", externalId: "demo-yt-subs" },
-          { name: "YouTube İzlenme", platform: "YouTube", category: "views", externalId: "demo-yt-views" },
-        ];
-        
-        let addedCount = 0;
-        for (const service of demoServices) {
-          try {
-            const serviceData = {
-              apiId: id,
-              externalId: service.externalId,
-              name: service.name,
-              platform: service.platform,
-              category: service.category,
-              minQuantity: 100,
-              maxQuantity: 50000,
-              isActive: true,
-            };
-            
-            await storage.createService(serviceData);
-            addedCount++;
-            
-          } catch (error) {
-            console.log(`Demo servis eklenirken hata: ${error.message}`);
-          }
-        }
-        
-        return res.json({
-          message: `Demo servisler eklendi. Gerçek API bağlantısı için API anahtarını kontrol edin.`,
-          addedCount,
-          isDemo: true
+        return res.status(500).json({ 
+          message: "API'den servis çekilemedi: " + (lastError?.message || "Bilinmeyen hata"),
+          error: lastError?.message || "API bağlantı hatası"
         });
       }
 
@@ -336,10 +325,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let addedCount = 0;
       let processedCount = 0;
+      let skippedCount = 0;
       const totalServices = services.length;
       const existingServices = await storage.getServicesByApi(id);
       
       console.log(`API'den ${totalServices} servis alındı, işleme başlanıyor...`);
+      console.log(`API ${id} için mevcut servis sayısı: ${existingServices.length}`);
       
       // Limit uygula
       const servicesToProcess = limit && limit > 0 ? services.slice(0, limit) : services;
@@ -378,10 +369,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                                serviceData.service_id?.toString();
               
               if (!serviceId) {
+                console.log(`⚠️  Service ID bulunamadı, servis atlanıyor:`, JSON.stringify(serviceData).substring(0, 200));
                 continue; // Service ID yoksa atla
               }
               
               const exists = existingServices.find(s => s.externalId === serviceId);
+              
+              if (!exists) {
+                console.log(`✅ Yeni servis: ${serviceId} - ${serviceData.name || 'İsimsiz'}`);
+              } else {
+                skippedCount++;
+                console.log(`⏭️  Servis zaten mevcut: ${serviceId} - ${serviceData.name || 'İsimsiz'}`);
+              }
               
               if (!exists) {
                 // Platform belirle
@@ -403,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 else if (serviceName.toLowerCase().includes('soundcloud')) platform = 'SoundCloud';
                 else if (serviceName.toLowerCase().includes('spotify')) platform = 'Spotify';
                 
-                servicesToCreate.push({
+                const serviceToCreate = {
                   apiId: id,
                   externalId: serviceId,
                   name: serviceName,
@@ -412,7 +411,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   minQuantity: parseInt(serviceData.min) || 1,
                   maxQuantity: parseInt(serviceData.max) || 10000,
                   isActive: true
-                });
+                };
+                
+                console.log(`📝 Servis oluşturulacak:`, serviceToCreate);
+                servicesToCreate.push(serviceToCreate);
               }
               
             } catch (serviceError) {
@@ -423,10 +425,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Bulk insert ile tüm batch'i tek seferde ekle
           if (servicesToCreate.length > 0) {
-            await storage.createServicesBulk(servicesToCreate);
+            console.log(`🔄 Batch ${i + batchIndex}: ${servicesToCreate.length} servis veritabanına kaydediliyor...`);
+            try {
+              const createdServices = await storage.createServicesBulk(servicesToCreate);
+              console.log(`✅ Batch ${i + batchIndex}: ${createdServices.length} servis başarıyla kaydedildi`);
+              return createdServices.length;
+            } catch (error) {
+              console.error(`❌ Batch ${i + batchIndex} kaydedilirken hata:`, error);
+              throw error;
+            }
           }
           
-          return servicesToCreate.length;
+          return 0;
         });
         
         // Batch'leri bekle ve sonuçları topla
@@ -439,7 +449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`İşlenen batch: ${processedBatches}/${batches.length} - Toplam eklenen: ${addedCount} (%${Math.round(processedCount/limitedTotal*100)})`);
       }
       
-      console.log(`Tamamlandı: ${addedCount} yeni servis eklendi, toplam ${processedCount} servis işlendi.`);
+      console.log(`Tamamlandı: ${addedCount} yeni servis eklendi, ${skippedCount} servis atlandı (zaten var), toplam ${processedCount} servis işlendi.`);
       
       if (limit && limit > 0) {
         console.log(`Not: Limit nedeniyle sadece ${limitedTotal}/${totalServices} servis işlendi.`);
