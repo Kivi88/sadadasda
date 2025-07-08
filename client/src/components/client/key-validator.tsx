@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/api";
 import OrderForm from "./order-form";
 import type { Service } from "@shared/schema";
 
@@ -17,7 +16,7 @@ export default function KeyValidator() {
 
   const validateKeyMutation = useMutation({
     mutationFn: async (key: string) => {
-      const response = await apiRequest(`/api/keys/validate`, {
+      const response = await fetch(`/api/keys/validate`, {
         method: "POST",
         body: JSON.stringify({ keyValue: key }),
         headers: { "Content-Type": "application/json" },

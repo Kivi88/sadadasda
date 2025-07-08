@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ShoppingCart, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/api";
 import { useLocation } from "wouter";
 import type { Service } from "@shared/schema";
 
@@ -29,7 +28,17 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: { keyValue: string; link: string; quantity: number; serviceId: number }) => {
-      const response = await apiRequest("POST", "/api/orders", data);
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Sipariş oluşturulamadı");
+      }
+      
       return response.json();
     },
     onSuccess: (order) => {
