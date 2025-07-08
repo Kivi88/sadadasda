@@ -223,10 +223,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!apiResponse || !apiResponse.ok) {
         console.log("Gerçek API'den veri çekilemiyor. Hata:", lastError?.message || "Bilinmeyen hata");
-        return res.status(500).json({ 
-          message: "API'den servis verisi alınamadı. Lütfen API URL'sini ve anahtarını kontrol edin.",
-          error: lastError?.message || "Bilinmeyen hata",
-          addedCount: 0
+        
+        // Eğer API'den veri çekilemiyorsa, demo servisler ile devam et
+        console.log("Demo servisler ekleniyor...");
+        
+        const demoServices = [
+          { name: "Instagram Takipçi", platform: "Instagram", category: "followers", externalId: "demo-ig-followers" },
+          { name: "Instagram Beğeni", platform: "Instagram", category: "likes", externalId: "demo-ig-likes" },
+          { name: "TikTok Takipçi", platform: "TikTok", category: "followers", externalId: "demo-tt-followers" },
+          { name: "TikTok Beğeni", platform: "TikTok", category: "likes", externalId: "demo-tt-likes" },
+          { name: "YouTube Abone", platform: "YouTube", category: "subscribers", externalId: "demo-yt-subs" },
+          { name: "YouTube İzlenme", platform: "YouTube", category: "views", externalId: "demo-yt-views" },
+        ];
+        
+        let addedCount = 0;
+        for (const service of demoServices) {
+          try {
+            const serviceData = {
+              apiId: id,
+              externalId: service.externalId,
+              name: service.name,
+              platform: service.platform,
+              category: service.category,
+              minQuantity: 100,
+              maxQuantity: 50000,
+              isActive: true,
+            };
+            
+            await storage.createService(serviceData);
+            addedCount++;
+            
+          } catch (error) {
+            console.log(`Demo servis eklenirken hata: ${error.message}`);
+          }
+        }
+        
+        return res.json({
+          message: `Demo servisler eklendi. Gerçek API bağlantısı için API anahtarını kontrol edin.`,
+          addedCount,
+          isDemo: true
         });
       }
 

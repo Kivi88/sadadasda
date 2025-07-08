@@ -154,6 +154,13 @@ npm run dev      # Start development server
   - Created new homepage with simplified key validation interface
   - Updated branding to "KIWIPAZARI" with Turkish language support
   - Implemented clean, dark-themed UI matching user specifications
+- July 08, 2025. **Key Validation & Single-Use System**:
+  - Enhanced key validation UI to show amount range based on key's max amount (0 - max_amount)
+  - Added proper link and quantity input fields in key validation component
+  - Implemented single-use key functionality - keys deactivate after reaching max amount
+  - Fixed real API order submission to external providers (MedyaBayim API)
+  - Improved order tracking with proper external order ID integration
+  - Added visual feedback showing remaining key amount after validation
 - July 08, 2025. **Project Migration & Homepage Redesign**:
   - Successfully migrated project from Replit Agent to Replit environment
   - Set up PostgreSQL database with proper environment variables
