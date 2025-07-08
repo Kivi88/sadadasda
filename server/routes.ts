@@ -569,7 +569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log(`🚀 API'ye sipariş gönderiliyor:`, orderData);
 
-        const response = await fetch(`${api.baseUrl}/v2`, {
+        const response = await fetch(`${api.url}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
