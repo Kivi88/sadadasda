@@ -68,16 +68,25 @@ export default function AdminDashboard() {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <div className="w-64 bg-card border-r border-border flex-shrink-0">
-        <div className="flex items-center justify-center h-16 border-b border-border">
-          <h1 className="text-xl font-bold text-foreground">SMM Panel</h1>
+      <div className="w-64 sidebar-dark flex-shrink-0">
+        <div className="flex items-center justify-center h-16 border-b border-slate-700">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Settings className="w-4 h-4 text-white" />
+            </div>
+            <h1 className="text-xl font-bold text-white">KiwiPazari</h1>
+          </div>
         </div>
         
         <nav className="mt-6">
-          <div className="px-4 space-y-2">
+          <div className="px-4 space-y-1">
             <button
               onClick={() => setActiveTab("dashboard")}
-              className={`sidebar-item w-full ${activeTab === "dashboard" ? "active" : ""}`}
+              className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === "dashboard" 
+                  ? "bg-blue-600 text-white shadow-lg" 
+                  : "text-slate-300 hover:text-white hover:bg-slate-700"
+              }`}
             >
               <TrendingUp className="w-4 h-4 mr-3" />
               Dashboard
@@ -85,7 +94,11 @@ export default function AdminDashboard() {
             
             <button
               onClick={() => setActiveTab("keys")}
-              className={`sidebar-item w-full ${activeTab === "keys" ? "active" : ""}`}
+              className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === "keys" 
+                  ? "bg-blue-600 text-white shadow-lg" 
+                  : "text-slate-300 hover:text-white hover:bg-slate-700"
+              }`}
             >
               <Key className="w-4 h-4 mr-3" />
               Key Yönetimi
@@ -93,7 +106,11 @@ export default function AdminDashboard() {
             
             <button
               onClick={() => setActiveTab("apis")}
-              className={`sidebar-item w-full ${activeTab === "apis" ? "active" : ""}`}
+              className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === "apis" 
+                  ? "bg-blue-600 text-white shadow-lg" 
+                  : "text-slate-300 hover:text-white hover:bg-slate-700"
+              }`}
             >
               <Plug className="w-4 h-4 mr-3" />
               API Yönetimi
@@ -101,7 +118,11 @@ export default function AdminDashboard() {
             
             <button
               onClick={() => setActiveTab("services")}
-              className={`sidebar-item w-full ${activeTab === "services" ? "active" : ""}`}
+              className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === "services" 
+                  ? "bg-blue-600 text-white shadow-lg" 
+                  : "text-slate-300 hover:text-white hover:bg-slate-700"
+              }`}
             >
               <Settings className="w-4 h-4 mr-3" />
               Servis Yönetimi
@@ -109,7 +130,11 @@ export default function AdminDashboard() {
             
             <button
               onClick={() => setActiveTab("orders")}
-              className={`sidebar-item w-full ${activeTab === "orders" ? "active" : ""}`}
+              className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === "orders" 
+                  ? "bg-blue-600 text-white shadow-lg" 
+                  : "text-slate-300 hover:text-white hover:bg-slate-700"
+              }`}
             >
               <ShoppingCart className="w-4 h-4 mr-3" />
               Siparişler
@@ -129,9 +154,9 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-card border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">
+        <header className="admin-header">
+          <div className="flex items-center justify-between px-6 py-4">
+            <h2 className="text-xl font-semibold text-white">
               {activeTab === "dashboard" && "Dashboard"}
               {activeTab === "keys" && "Key Yönetimi"}
               {activeTab === "apis" && "API Yönetimi"}
@@ -139,21 +164,24 @@ export default function AdminDashboard() {
               {activeTab === "orders" && "Siparişler"}
             </h2>
             <div className="flex items-center space-x-4">
-              <Button className="btn-primary">
-                <span className="text-sm">Yeni Ekle</span>
-              </Button>
+              <Badge className="status-active">
+                Sistem Aktif
+              </Badge>
+              <div className="text-sm text-slate-300">
+                {new Date().toLocaleString('tr-TR')}
+              </div>
               <div className="flex items-center space-x-2">
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <Users className="w-4 h-4" />
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <Users className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-sm font-medium">Admin</span>
+                  <span className="text-sm font-medium text-white">Admin</span>
                 </div>
                 <Button
                   onClick={handleLogout}
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground hover:text-destructive"
+                  className="text-white hover:bg-slate-700"
                 >
                   <LogOut className="w-4 h-4" />
                 </Button>
@@ -168,38 +196,69 @@ export default function AdminDashboard() {
             <div className="p-6 fade-in">
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <StatsCard
-                  title="Toplam Key"
-                  value={statsLoading ? "..." : stats?.totalKeys || "0"}
-                  icon={<Key className="w-6 h-6 text-primary" />}
-                  bgColor="bg-primary/20"
-                />
-                <StatsCard
-                  title="Aktif API"
-                  value={statsLoading ? "..." : stats?.activeApis || "0"}
-                  icon={<Plug className="w-6 h-6 text-green-500" />}
-                  bgColor="bg-green-500/20"
-                />
-                <StatsCard
-                  title="Toplam Sipariş"
-                  value={statsLoading ? "..." : stats?.totalOrders || "0"}
-                  icon={<ShoppingCart className="w-6 h-6 text-orange-500" />}
-                  bgColor="bg-orange-500/20"
-                />
-                <StatsCard
-                  title="Başarı Oranı"
-                  value={statsLoading ? "..." : stats?.successRate || "0%"}
-                  icon={<TrendingUp className="w-6 h-6 text-cyan-500" />}
-                  bgColor="bg-cyan-500/20"
-                />
+                <Card className="metric-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-400">Toplam Key</p>
+                        <p className="text-2xl font-bold text-white">{statsLoading ? "..." : stats?.totalKeys || "0"}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <Key className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="metric-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-400">Aktif API</p>
+                        <p className="text-2xl font-bold text-white">{statsLoading ? "..." : stats?.activeApis || "0"}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                        <Plug className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="metric-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-400">Toplam Sipariş</p>
+                        <p className="text-2xl font-bold text-white">{statsLoading ? "..." : stats?.totalOrders || "0"}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center">
+                        <ShoppingCart className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="metric-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-slate-400">Başarı Oranı</p>
+                        <p className="text-2xl font-bold text-white">{statsLoading ? "..." : stats?.successRate || "0%"}</p>
+                      </div>
+                      <div className="w-12 h-12 bg-cyan-600 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Recent Activities */}
-                <Card>
+                <Card className="cpanel-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="w-5 h-5" />
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <Activity className="w-5 h-5 text-blue-400" />
                       Son Aktiviteler
                     </CardTitle>
                   </CardHeader>
@@ -227,27 +286,27 @@ export default function AdminDashboard() {
                 </Card>
 
                 {/* System Status */}
-                <Card>
+                <Card className="cpanel-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="w-5 h-5" />
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <Activity className="w-5 h-5 text-green-400" />
                       Sistem Durumu
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {systemStatus.map((item) => (
-                        <div key={item.name} className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-muted-foreground">
+                        <div key={item.name} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                          <span className="text-sm font-medium text-white">
                             {item.name}
                           </span>
                           <Badge className={
                             item.status === "active" ? "status-active" : 
-                            item.status === "warning" ? "status-inactive" : 
-                            "status-pending"
+                            item.status === "warning" ? "bg-orange-500/20 text-orange-400 border-orange-500/30" : 
+                            "status-inactive"
                           }>
                             {item.status === "active" ? "Aktif" : 
-                             item.status === "warning" ? "Orta" : "Beklemede"}
+                             item.status === "warning" ? "Uyarı" : "Pasif"}
                           </Badge>
                         </div>
                       ))}

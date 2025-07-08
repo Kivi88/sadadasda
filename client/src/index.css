@@ -3,25 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(222, 47%, 11%);
+  --background: hsl(224, 71%, 4%);
   --foreground: hsl(210, 40%, 98%);
-  --muted: hsl(215, 13%, 19%);
-  --muted-foreground: hsl(215, 16%, 47%);
-  --popover: hsl(222, 47%, 11%);
+  --muted: hsl(223, 47%, 11%);
+  --muted-foreground: hsl(215, 16%, 57%);
+  --popover: hsl(224, 71%, 4%);
   --popover-foreground: hsl(210, 40%, 98%);
-  --card: hsl(215, 13%, 19%);
+  --card: hsl(224, 71%, 4%);
   --card-foreground: hsl(210, 40%, 98%);
-  --border: hsl(215, 16%, 29%);
-  --input: hsl(215, 16%, 29%);
-  --primary: hsl(217, 91%, 60%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(215, 13%, 19%);
+  --border: hsl(216, 34%, 17%);
+  --input: hsl(216, 34%, 17%);
+  --primary: hsl(210, 40%, 98%);
+  --primary-foreground: hsl(222, 84%, 4.9%);
+  --secondary: hsl(222, 47%, 11%);
   --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(215, 13%, 19%);
+  --accent: hsl(216, 34%, 17%);
   --accent-foreground: hsl(210, 40%, 98%);
-  --destructive: hsl(0, 84%, 60%);
+  --destructive: hsl(0, 63%, 31%);
   --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(217, 91%, 60%);
+  --ring: hsl(216, 34%, 17%);
   --radius: 0.5rem;
   --success: hsl(142, 71%, 45%);
   --success-foreground: hsl(210, 40%, 98%);
@@ -67,6 +67,8 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+    background-size: 20px 20px;
   }
 }
 
@@ -99,6 +101,50 @@
 
   .table-hover:hover {
     background-color: hsl(var(--muted) / 0.5);
+  }
+
+  .cpanel-card {
+    @apply bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-lg shadow-lg;
+    background-image: linear-gradient(135deg, hsl(220, 13%, 13%) 0%, hsl(220, 13%, 9%) 100%);
+  }
+
+  .cpanel-button {
+    @apply transition-all duration-200 font-medium;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .cpanel-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .status-badge {
+    @apply px-2 py-1 text-xs font-medium rounded-full;
+  }
+
+  .status-active {
+    @apply bg-green-500/20 text-green-400 border border-green-500/30;
+  }
+
+  .status-inactive {
+    @apply bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+
+  .metric-card {
+    @apply bg-gradient-to-br from-slate-800 to-slate-700 border border-slate-600 rounded-lg p-4 shadow-md;
+  }
+
+  .metric-card:hover {
+    @apply border-slate-500 shadow-lg;
+    transform: translateY(-2px);
+  }
+
+  .admin-header {
+    @apply bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 shadow-lg;
+  }
+
+  .sidebar-dark {
+    @apply bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700;
   }
 
   .notification {

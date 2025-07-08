@@ -130,10 +130,10 @@ export default function ApiManagement() {
           </div>
         </div>
         
-        <Card className="mb-6 border-2 border-dashed border-border/50 hover:border-primary/50 transition-colors">
+        <Card className="mb-6 cpanel-card border-2 border-dashed border-slate-600 hover:border-blue-400 transition-colors">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="w-5 h-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Plus className="w-5 h-5 text-blue-400" />
               Yeni API Ekle
             </CardTitle>
           </CardHeader>
@@ -189,7 +189,7 @@ export default function ApiManagement() {
               <Button 
                 onClick={handleCreateApi}
                 disabled={createApiMutation.isPending}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+                className="cpanel-button bg-green-600 hover:bg-green-700 text-white px-6 py-2"
                 size="lg"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -200,10 +200,10 @@ export default function ApiManagement() {
         </Card>
       </div>
       
-      <Card>
+      <Card className="cpanel-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-2 h-6 bg-primary rounded-full"></div>
+          <CardTitle className="flex items-center gap-2 text-white">
+            <div className="w-2 h-6 bg-blue-400 rounded-full"></div>
             Mevcut API'ler
           </CardTitle>
         </CardHeader>
@@ -219,28 +219,28 @@ export default function ApiManagement() {
               </div>
             ) : (
               apis?.map((api: Api) => (
-                <Card key={api.id} className="bg-gradient-to-br from-card to-muted/30 border-border hover:border-primary/30 transition-all duration-200 hover:shadow-lg">
+                <Card key={api.id} className="cpanel-card border-slate-600 hover:border-slate-500 transition-all duration-200 hover:shadow-xl">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h5 className="font-semibold text-foreground text-lg">{api.name}</h5>
-                      <Badge className={api.isActive ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}>
+                      <h5 className="font-semibold text-white text-lg">{api.name}</h5>
+                      <Badge className={api.isActive ? "status-active" : "status-inactive"}>
                         {api.isActive ? "Aktif" : "Pasif"}
                       </Badge>
                     </div>
                     <div className="space-y-3 mb-4">
-                      <div className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
-                        <span className="text-muted-foreground font-medium">Servis Sayısı:</span>
-                        <span className="text-foreground font-semibold">{api.serviceCount || 0}</span>
+                      <div className="flex items-center justify-between text-sm bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                        <span className="text-slate-300 font-medium">Servis Sayısı:</span>
+                        <span className="text-white font-semibold">{api.serviceCount || 0}</span>
                       </div>
-                      <div className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
-                        <span className="text-muted-foreground font-medium">Son Güncelleme:</span>
-                        <span className="text-foreground font-semibold">
+                      <div className="flex items-center justify-between text-sm bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                        <span className="text-slate-300 font-medium">Son Güncelleme:</span>
+                        <span className="text-white font-semibold">
                           {api.lastSync ? new Date(api.lastSync).toLocaleString("tr-TR") : "Hiç"}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
-                        <span className="text-muted-foreground font-medium">Yanıt Süresi:</span>
-                        <span className="text-foreground font-semibold">
+                      <div className="flex items-center justify-between text-sm bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                        <span className="text-slate-300 font-medium">Yanıt Süresi:</span>
+                        <span className="text-white font-semibold">
                           {api.responseTime ? `${api.responseTime}ms` : "Bilinmiyor"}
                         </span>
                       </div>
@@ -251,7 +251,7 @@ export default function ApiManagement() {
                           variant="outline"
                           size="sm"
                           onClick={() => testApi(api)}
-                          className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/30"
+                          className="cpanel-button flex-1 bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
                         >
                           <TestTube className="w-4 h-4 mr-1" />
                           Test
@@ -261,7 +261,7 @@ export default function ApiManagement() {
                           size="sm"
                           onClick={() => fetchServicesMutation.mutate(api.id)}
                           disabled={fetchServicesMutation.isPending}
-                          className="flex-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30"
+                          className="cpanel-button flex-1 bg-green-600 hover:bg-green-700 text-white border-green-600"
                         >
                           <Download className="w-4 h-4 mr-1" />
                           {fetchServicesMutation.isPending ? "Çekiliyor..." : "Çek"}
@@ -271,7 +271,7 @@ export default function ApiManagement() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                          className="cpanel-button flex-1 bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-600"
                         >
                           <Edit className="w-4 h-4 mr-1" />
                           Düzenle
@@ -281,7 +281,7 @@ export default function ApiManagement() {
                           size="sm"
                           onClick={() => deleteApiMutation.mutate(api.id)}
                           disabled={deleteApiMutation.isPending}
-                          className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
+                          className="cpanel-button flex-1 bg-red-600 hover:bg-red-700 text-white border-red-600"
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           {deleteApiMutation.isPending ? "Siliniyor..." : "Sil"}

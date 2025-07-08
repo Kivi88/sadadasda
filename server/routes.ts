@@ -118,53 +118,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "API bulunamadı" });
       }
 
-      // Demo servisleri otomatik olarak ekle
-      const demoServices = [
-        { name: "Instagram Takipçi", type: "followers", price: 0.1, minOrder: 100, maxOrder: 100000, description: "Kaliteli Instagram takipçi" },
-        { name: "Instagram Beğeni", type: "likes", price: 0.05, minOrder: 50, maxOrder: 50000, description: "Hızlı Instagram beğeni" },
-        { name: "TikTok Takipçi", type: "followers", price: 0.12, minOrder: 100, maxOrder: 50000, description: "Gerçek TikTok takipçi" },
-        { name: "TikTok Beğeni", type: "likes", price: 0.06, minOrder: 50, maxOrder: 100000, description: "Organik TikTok beğeni" },
-        { name: "YouTube Abone", type: "subscribers", price: 0.25, minOrder: 50, maxOrder: 10000, description: "Kaliteli YouTube abone" },
-        { name: "YouTube İzlenme", type: "views", price: 0.02, minOrder: 1000, maxOrder: 1000000, description: "Gerçek YouTube izlenme" },
-        { name: "Twitter Takipçi", type: "followers", price: 0.15, minOrder: 100, maxOrder: 50000, description: "Aktif Twitter takipçi" },
-        { name: "Twitter Beğeni", type: "likes", price: 0.08, minOrder: 50, maxOrder: 25000, description: "Hızlı Twitter beğeni" },
-        { name: "Facebook Beğeni", type: "likes", price: 0.10, minOrder: 100, maxOrder: 50000, description: "Organik Facebook beğeni" },
-        { name: "Telegram Üye", type: "members", price: 0.20, minOrder: 100, maxOrder: 25000, description: "Aktif Telegram üye" }
-      ];
+      // Gerçek API'den servisleri çek
+      const apiResponse = await fetch(`${api.url}/services`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "KiwiPazari/1.0"
+        },
+        body: JSON.stringify({
+          key: api.key,
+          action: "services"
+        })
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error(`API yanıtı başarısız: ${apiResponse.status} ${apiResponse.statusText}`);
+      }
+
+      const servicesData = await apiResponse.json();
+      
+      // Yanıtın array olup olmadığını kontrol et
+      if (!Array.isArray(servicesData)) {
+        throw new Error("API geçersiz veri formatı döndürdü");
+      }
 
       let addedCount = 0;
-      for (const serviceData of demoServices) {
-        // Aynı servisin zaten mevcut olup olmadığını kontrol et
-        const existingServices = await storage.getServicesByApi(id);
-        const exists = existingServices.find(s => s.name === serviceData.name);
+      const existingServices = await storage.getServicesByApi(id);
+      
+      for (const serviceData of servicesData) {
+        // Servis zaten mevcut mu kontrol et
+        const serviceId = serviceData.service?.toString() || serviceData.id?.toString();
+        const exists = existingServices.find(s => s.externalId === serviceId);
         
-        if (!exists) {
+        if (!exists && serviceId) {
+          // Platform belirle
           let platform = 'Social Media';
-          if (serviceData.name.includes('Instagram')) platform = 'Instagram';
-          else if (serviceData.name.includes('TikTok')) platform = 'TikTok';
-          else if (serviceData.name.includes('YouTube')) platform = 'YouTube';
-          else if (serviceData.name.includes('Twitter')) platform = 'Twitter';
-          else if (serviceData.name.includes('Facebook')) platform = 'Facebook';
-          else if (serviceData.name.includes('Telegram')) platform = 'Telegram';
+          const serviceName = serviceData.name || `Servis ${serviceId}`;
+          
+          if (serviceName.toLowerCase().includes('instagram')) platform = 'Instagram';
+          else if (serviceName.toLowerCase().includes('tiktok')) platform = 'TikTok';
+          else if (serviceName.toLowerCase().includes('youtube')) platform = 'YouTube';
+          else if (serviceName.toLowerCase().includes('twitter')) platform = 'Twitter';
+          else if (serviceName.toLowerCase().includes('facebook')) platform = 'Facebook';
+          else if (serviceName.toLowerCase().includes('telegram')) platform = 'Telegram';
           
           await storage.createService({
             apiId: id,
-            externalId: `${id}-${serviceData.name.toLowerCase().replace(/\s+/g, '-')}`,
-            name: serviceData.name,
+            externalId: serviceId,
+            name: serviceName,
             platform: platform,
-            category: serviceData.type,
-            minQuantity: serviceData.minOrder,
-            maxQuantity: serviceData.maxOrder,
+            category: serviceData.type || serviceData.category || 'Genel',
+            minQuantity: parseInt(serviceData.min) || 1,
+            maxQuantity: parseInt(serviceData.max) || 10000,
+            price: parseFloat(serviceData.rate) || 0.01,
             isActive: true
           });
           addedCount++;
         }
       }
 
-      res.json({ message: `${addedCount} servis çekildi`, addedCount });
+      // API'nin son senkronizasyon zamanını güncelle
+      await storage.updateApi(id, { lastSync: new Date() });
+
+      res.json({ 
+        message: `${addedCount} yeni servis eklendi`, 
+        addedCount,
+        totalFromAPI: servicesData.length
+      });
     } catch (error) {
       console.error("Error fetching services:", error);
-      res.status(500).json({ message: "Servisler çekilemedi" });
+      res.status(500).json({ 
+        message: "Servisler çekilemedi: " + error.message 
+      });
     }
   });
 
