@@ -1,42 +1,48 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CheckCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/api";
 import OrderForm from "./order-form";
-import type { Key, Service } from "@shared/schema";
+import type { Service } from "@shared/schema";
 
 export default function KeyValidator() {
   const [keyValue, setKeyValue] = useState("");
-  const [validatedKey, setValidatedKey] = useState<Key | null>(null);
+  const [validatedKey, setValidatedKey] = useState<any>(null);
   const [validatedService, setValidatedService] = useState<Service | null>(null);
-  
   const { toast } = useToast();
 
   const validateKeyMutation = useMutation({
-    mutationFn: async (keyValue: string) => {
-      const response = await apiRequest("POST", "/api/keys/validate", { keyValue });
+    mutationFn: async (key: string) => {
+      const response = await apiRequest(`/api/keys/validate`, {
+        method: "POST",
+        body: JSON.stringify({ keyValue: key }),
+        headers: { "Content-Type": "application/json" },
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Key doğrulama başarısız");
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
-      setValidatedKey(data.key);
-      setValidatedService(data.service);
+      setValidatedKey(data);
       toast({
-        title: "Key Doğrulandı",
-        description: "Key başarıyla doğrulandı! Sipariş formunu doldurabilirsiniz.",
+        title: "✅ Başarılı",
+        description: "Key doğrulandı! Servisler yükleniyor...",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
-        title: "Geçersiz Key",
-        description: error.message || "Lütfen doğru key'i girin.",
+        title: "❌ Hata",
+        description: error.message || "Key doğrulama başarısız",
         variant: "destructive",
       });
-      setValidatedKey(null);
-      setValidatedService(null);
     },
   });
 
@@ -57,7 +63,7 @@ export default function KeyValidator() {
     <div className="space-y-6">
       <Card className="text-center">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Ürünü Teslim AI</CardTitle>
+          <CardTitle className="text-2xl font-bold">KiwiPazarı</CardTitle>
           <p className="text-muted-foreground">Lütfen ürün anahtarınızı girin</p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -72,19 +78,26 @@ export default function KeyValidator() {
               }
             }}
           />
-          
-          <Button
-            onClick={handleValidateKey}
-            disabled={validateKeyMutation.isPending}
-            className="w-full btn-success"
+          <Button 
+            onClick={handleValidateKey} 
+            disabled={validateKeyMutation.isPending || !keyValue}
+            className="w-full"
           >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            {validateKeyMutation.isPending ? "Doğrulanıyor..." : "Doğrula"}
+            {validateKeyMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Doğrulanıyor...
+              </>
+            ) : (
+              "✅ Doğrula"
+            )}
           </Button>
           
-          <p className="text-sm text-muted-foreground">
-            Siparişi oluşturduktan sonra ürün anahtarınızı girerek durumunu kontrol edebilirsiniz.
-          </p>
+          {validatedKey && (
+            <p className="text-sm text-green-600 mt-2">
+              Sipariş oluşturduysanız ürün anahtarınızı girerek durumunu kontrol edebilirsiniz
+            </p>
+          )}
         </CardContent>
       </Card>
 
