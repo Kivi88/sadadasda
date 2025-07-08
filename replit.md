@@ -133,6 +133,13 @@ npm run dev      # Start development server
   - Added automatic redirect to order search page after successful order creation
   - Implemented 5-second auto-redirect timer with visual countdown
   - Improved order-to-API data flow for proper external order processing
+- July 08, 2025. **Key Validation & Single-Use System**:
+  - Enhanced key validation UI to show amount range based on key's max amount (0 - max_amount)
+  - Added proper link and quantity input fields in key validation component
+  - Implemented single-use key functionality - keys deactivate after reaching max amount
+  - Fixed real API order submission to external providers (MedyaBayim API)
+  - Improved order tracking with proper external order ID integration
+  - Added visual feedback showing remaining key amount after validation
 
 ## User Preferences
 

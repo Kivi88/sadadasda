@@ -516,25 +516,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // API'ye sipariş gönder
       let externalOrderId = null;
-      let orderStatus = "processing"; // Default olarak processing yapalım
+      let orderStatus = "processing";
       
       try {
-        // Simulasyon için rastgele external order ID oluştur
-        externalOrderId = `EXT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        console.log(`✅ Sipariş sistemi çalışıyor! Sipariş ID: ${externalOrderId}`);
-        console.log(`📋 Servis: ${service.name}, Miktar: ${quantity}, Link: ${link}`);
-        
-        // Key'in kullanılan miktarını güncelle
-        await storage.updateKey(key.id, {
-          usedAmount: (key.usedAmount || 0) + quantity
+        // Gerçek API'ye sipariş gönder
+        const orderData = {
+          key: api.apiKey,
+          action: 'add',
+          service: service.externalId,
+          link: link,
+          quantity: quantity
+        };
+
+        console.log(`🚀 API'ye sipariş gönderiliyor:`, orderData);
+
+        const response = await fetch(`${api.baseUrl}/v2`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(orderData),
         });
-        
-        console.log(`✅ Key kullanım miktarı güncellendi. Kullanılan: ${(key.usedAmount || 0) + quantity}`);
+
+        const responseData = await response.json();
+        console.log(`📦 API yanıtı:`, responseData);
+
+        if (response.ok && responseData.order) {
+          externalOrderId = responseData.order.toString();
+          orderStatus = "processing";
+          console.log(`✅ Sipariş API'ye başarıyla gönderildi! External ID: ${externalOrderId}`);
+        } else {
+          console.error("❌ API sipariş hatası:", responseData);
+          orderStatus = "failed";
+          externalOrderId = null;
+        }
         
       } catch (error) {
-        console.error("Sipariş işleme hatası:", error);
+        console.error("❌ API bağlantı hatası:", error);
         orderStatus = "failed";
+        externalOrderId = null;
+      }
+
+      // Key'in kullanılan miktarını güncelle ve tek kullanımlıksa deaktive et
+      const newUsedAmount = (key.usedAmount || 0) + quantity;
+      const shouldDeactivate = newUsedAmount >= (key.maxAmount || 1000);
+      
+      await storage.updateKey(key.id, {
+        usedAmount: newUsedAmount,
+        isActive: !shouldDeactivate // Eğer maksimum miktara ulaştıysa key'i deaktive et
+      });
+      
+      if (shouldDeactivate) {
+        console.log(`🔒 Key deaktive edildi - maksimum kullanım miktarına ulaşıldı`);
+      }
+      
+      console.log(`✅ Key kullanım miktarı güncellendi. Kullanılan: ${newUsedAmount}`);
+      
+      // Eğer API'ye sipariş gönderilememişse hata dön
+      if (!externalOrderId) {
+        return res.status(500).json({ 
+          message: "Sipariş oluşturulamadı - API'ye bağlanılamadı" 
+        });
       }
 
       const orderId = generateOrderId();

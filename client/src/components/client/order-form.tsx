@@ -14,12 +14,12 @@ import type { Service } from "@shared/schema";
 interface OrderFormProps {
   keyValue: string;
   service: Service;
+  quantity: number;
+  link: string;
   onOrderCreated: () => void;
 }
 
-export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFormProps) {
-  const [link, setLink] = useState("");
-  const [quantity, setQuantity] = useState(service.minQuantity || 1);
+export default function OrderForm({ keyValue, service, quantity, link, onOrderCreated }: OrderFormProps) {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<any>(null);
   
@@ -45,8 +45,6 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
       setCreatedOrder(order);
       setShowSuccessModal(true);
       onOrderCreated();
-      setLink("");
-      setQuantity(service.minQuantity || 1);
     },
     onError: (error) => {
       toast({
@@ -117,29 +115,13 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <Label htmlFor="orderLink">Link</Label>
-          <Input
-            id="orderLink"
-            type="url"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            placeholder="https://instagram.com/username"
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="orderQuantity">
-            Miktar ({service.minQuantity} - {service.maxQuantity?.toLocaleString()})
-          </Label>
-          <Input
-            id="orderQuantity"
-            type="number"
-            value={quantity}
-            onChange={(e) => setQuantity(parseInt(e.target.value) || service.minQuantity!)}
-            min={service.minQuantity}
-            max={service.maxQuantity}
-          />
+        <div className="p-4 bg-blue-50 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Link:</strong> {link}
+          </p>
+          <p className="text-sm text-blue-800">
+            <strong>Miktar:</strong> {quantity.toLocaleString()}
+          </p>
         </div>
         
         <Button

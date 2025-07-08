@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import OrderForm from "./order-form";
@@ -12,6 +13,8 @@ export default function KeyValidator() {
   const [keyValue, setKeyValue] = useState("");
   const [validatedKey, setValidatedKey] = useState<any>(null);
   const [validatedService, setValidatedService] = useState<Service | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [link, setLink] = useState("");
   const { toast } = useToast();
 
   const validateKeyMutation = useMutation({
@@ -30,10 +33,12 @@ export default function KeyValidator() {
       return response.json();
     },
     onSuccess: (data) => {
-      setValidatedKey(data);
+      setValidatedKey(data.key);
+      setValidatedService(data.service);
+      setQuantity(data.service.minQuantity || 1);
       toast({
         title: "✅ Başarılı",
-        description: "Key doğrulandı! Servisler yükleniyor...",
+        description: "Key doğrulandı! Sipariş bilgilerini girin.",
       });
     },
     onError: (error: any) => {
@@ -92,10 +97,42 @@ export default function KeyValidator() {
             )}
           </Button>
           
-          {validatedKey && (
-            <p className="text-sm text-green-600 mt-2">
-              Sipariş oluşturduysanız ürün anahtarınızı girerek durumunu kontrol edebilirsiniz
-            </p>
+          {validatedKey && validatedService && (
+            <div className="space-y-4 mt-4">
+              <div className="p-4 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-800">
+                  <strong>Servis:</strong> {validatedService.name}
+                </p>
+                <p className="text-sm text-green-600 mt-1">
+                  Kalan miktar: {(validatedKey.maxAmount || 1000) - (validatedKey.usedAmount || 0)}
+                </p>
+              </div>
+              
+              <div>
+                <Label htmlFor="orderQuantity">
+                  Miktar (0 - {(validatedKey.maxAmount || 1000) - (validatedKey.usedAmount || 0)})
+                </Label>
+                <Input
+                  id="orderQuantity"
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                  min={1}
+                  max={(validatedKey.maxAmount || 1000) - (validatedKey.usedAmount || 0)}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="orderLink">Link</Label>
+                <Input
+                  id="orderLink"
+                  type="url"
+                  value={link}
+                  onChange={(e) => setLink(e.target.value)}
+                  placeholder="https://instagram.com/username"
+                />
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -104,10 +141,14 @@ export default function KeyValidator() {
         <OrderForm 
           keyValue={keyValue} 
           service={validatedService}
+          quantity={quantity}
+          link={link}
           onOrderCreated={() => {
             setKeyValue("");
             setValidatedKey(null);
             setValidatedService(null);
+            setQuantity(1);
+            setLink("");
           }}
         />
       )}
