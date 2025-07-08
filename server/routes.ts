@@ -119,27 +119,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "API bulunamadı" });
       }
 
+      // Eğer MedyaBayim API'si ise ve environment variable varsa onu kullan
+      let apiKey = api.apiKey;
+      if (api.name.toLowerCase().includes('medya') && process.env.MEDYABAYIM_API_KEY) {
+        apiKey = process.env.MEDYABAYIM_API_KEY;
+        console.log('MedyaBayim API key from environment variable loaded');
+      } else {
+        console.log('Using API key from database:', apiKey);
+      }
+
       console.log(`API ${api.name} için servis çekme başlatıldı. Limit: ${limit || 'sınırsız'}`);
 
-      // API URL'sini normalize et
-      let baseUrl = api.url.replace(/\/+$/, ''); // Trailing slash'leri kaldır
-      
-      // Farklı endpoint'leri dene - medyabayim için özel durumlar
+      // MedyaBayim API için doğru endpoint'leri kullan
       const possibleEndpoints = [
-        `${baseUrl}`, // Ana endpoint
-        `${baseUrl}/services`,
-        `${baseUrl}/service`,
-        // Versiyon değişiklikleri dene
-        `${baseUrl.replace('/v2', '/v1')}`,
-        `${baseUrl.replace('/v1', '/v2')}`,
-        `${baseUrl.replace('/v2', '/v1')}/services`,
-        `${baseUrl.replace('/v1', '/v2')}/services`,
-        // Eğer versiyon yoksa ekle
-        `${baseUrl}/v1`,
-        `${baseUrl}/v2`,
-        `${baseUrl}/v1/services`,
-        `${baseUrl}/v2/services`
-      ].filter((url, index, self) => self.indexOf(url) === index); // Duplicates'i kaldır
+        `${api.url}/services`,
+        `${api.url}`,
+        `${api.url}/service`
+      ];
       
       let apiResponse = null;
       let lastError = null;
@@ -154,25 +150,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             {
               method: "POST",
               headers: { "Content-Type": "application/json", "User-Agent": "KiwiPazari/1.0" },
-              body: JSON.stringify({ key: api.apiKey, action: "services" })
+              body: JSON.stringify({ key: apiKey, action: "services" })
             },
             // POST sadece key ile
             {
               method: "POST", 
               headers: { "Content-Type": "application/json", "User-Agent": "KiwiPazari/1.0" },
-              body: JSON.stringify({ key: api.apiKey })
+              body: JSON.stringify({ key: apiKey })
             },
             // GET ile query parametreleri
             {
               method: "GET",
               headers: { "User-Agent": "KiwiPazari/1.0" },
-              url: `${endpoint}?key=${api.apiKey}&action=services`
+              url: `${endpoint}?key=${apiKey}&action=services`
             },
             // GET sadece key ile
             {
               method: "GET",
               headers: { "User-Agent": "KiwiPazari/1.0" },
-              url: `${endpoint}?key=${api.apiKey}`
+              url: `${endpoint}?key=${apiKey}`
             }
           ];
           
