@@ -349,65 +349,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Limit uygulandı: ${limitedTotal} servis işlenecek (toplam ${totalServices} servis var)`);
       }
       
-      for (const serviceData of servicesToProcess) {
-        processedCount++;
+      // Paralel batch işleme için servisleri gruplara ayır
+      const BATCH_SIZE = 50; // Her batch'te 50 servis
+      const PARALLEL_BATCHES = 4; // Aynı anda 4 batch işle
+      
+      const batches = [];
+      for (let i = 0; i < servicesToProcess.length; i += BATCH_SIZE) {
+        batches.push(servicesToProcess.slice(i, i + BATCH_SIZE));
+      }
+      
+      console.log(`${batches.length} batch oluşturuldu (batch başına ${BATCH_SIZE} servis)`);
+      
+      // Batch'leri paralel olarak işle
+      for (let i = 0; i < batches.length; i += PARALLEL_BATCHES) {
+        const currentBatches = batches.slice(i, i + PARALLEL_BATCHES);
         
-        // Progress güncellemesi (her 100 serviste bir veya her 1000 serviste bir)
-        const progressStep = limitedTotal <= 1000 ? 100 : 1000;
-        if (processedCount % progressStep === 0) {
-          console.log(`İşlenen: ${processedCount}/${limitedTotal} (%${Math.round(processedCount/limitedTotal*100)})`);
-        }
-        
-        try {
-          // Servis ID'sini farklı alanlardan al
-          const serviceId = serviceData.service?.toString() || 
-                           serviceData.id?.toString() || 
-                           serviceData.serviceId?.toString() ||
-                           serviceData.service_id?.toString();
+        const batchPromises = currentBatches.map(async (batch, batchIndex) => {
+          const servicesToCreate = [];
           
-          if (!serviceId) {
-            console.log("Servis ID bulunamadı, servis:", JSON.stringify(serviceData).substring(0, 200));
-            continue; // Service ID yoksa atla
+          for (const serviceData of batch) {
+            processedCount++;
+            
+            try {
+              // Servis ID'sini farklı alanlardan al
+              const serviceId = serviceData.service?.toString() || 
+                               serviceData.id?.toString() || 
+                               serviceData.serviceId?.toString() ||
+                               serviceData.service_id?.toString();
+              
+              if (!serviceId) {
+                continue; // Service ID yoksa atla
+              }
+              
+              const exists = existingServices.find(s => s.externalId === serviceId);
+              
+              if (!exists) {
+                // Platform belirle
+                let platform = 'Social Media';
+                const serviceName = serviceData.name || `Servis ${serviceId}`;
+                
+                if (serviceName.toLowerCase().includes('instagram')) platform = 'Instagram';
+                else if (serviceName.toLowerCase().includes('tiktok')) platform = 'TikTok';
+                else if (serviceName.toLowerCase().includes('youtube')) platform = 'YouTube';
+                else if (serviceName.toLowerCase().includes('twitter')) platform = 'Twitter';
+                else if (serviceName.toLowerCase().includes('facebook')) platform = 'Facebook';
+                else if (serviceName.toLowerCase().includes('telegram')) platform = 'Telegram';
+                else if (serviceName.toLowerCase().includes('linkedin')) platform = 'LinkedIn';
+                else if (serviceName.toLowerCase().includes('snapchat')) platform = 'Snapchat';
+                else if (serviceName.toLowerCase().includes('pinterest')) platform = 'Pinterest';
+                else if (serviceName.toLowerCase().includes('reddit')) platform = 'Reddit';
+                else if (serviceName.toLowerCase().includes('discord')) platform = 'Discord';
+                else if (serviceName.toLowerCase().includes('twitch')) platform = 'Twitch';
+                else if (serviceName.toLowerCase().includes('soundcloud')) platform = 'SoundCloud';
+                else if (serviceName.toLowerCase().includes('spotify')) platform = 'Spotify';
+                
+                servicesToCreate.push({
+                  apiId: id,
+                  externalId: serviceId,
+                  name: serviceName,
+                  platform: platform,
+                  category: serviceData.type || serviceData.category || 'Genel',
+                  minQuantity: parseInt(serviceData.min) || 1,
+                  maxQuantity: parseInt(serviceData.max) || 10000,
+                  isActive: true
+                });
+              }
+              
+            } catch (serviceError) {
+              console.error(`Servis işlenirken hata (ID: ${serviceData.service || serviceData.id}):`, serviceError.message);
+              continue; // Hata durumunda sonraki servise geç
+            }
           }
           
-          const exists = existingServices.find(s => s.externalId === serviceId);
-          
-          if (!exists) {
-            // Platform belirle
-            let platform = 'Social Media';
-            const serviceName = serviceData.name || `Servis ${serviceId}`;
-            
-            if (serviceName.toLowerCase().includes('instagram')) platform = 'Instagram';
-            else if (serviceName.toLowerCase().includes('tiktok')) platform = 'TikTok';
-            else if (serviceName.toLowerCase().includes('youtube')) platform = 'YouTube';
-            else if (serviceName.toLowerCase().includes('twitter')) platform = 'Twitter';
-            else if (serviceName.toLowerCase().includes('facebook')) platform = 'Facebook';
-            else if (serviceName.toLowerCase().includes('telegram')) platform = 'Telegram';
-            else if (serviceName.toLowerCase().includes('linkedin')) platform = 'LinkedIn';
-            else if (serviceName.toLowerCase().includes('snapchat')) platform = 'Snapchat';
-            else if (serviceName.toLowerCase().includes('pinterest')) platform = 'Pinterest';
-            else if (serviceName.toLowerCase().includes('reddit')) platform = 'Reddit';
-            else if (serviceName.toLowerCase().includes('discord')) platform = 'Discord';
-            else if (serviceName.toLowerCase().includes('twitch')) platform = 'Twitch';
-            else if (serviceName.toLowerCase().includes('soundcloud')) platform = 'SoundCloud';
-            else if (serviceName.toLowerCase().includes('spotify')) platform = 'Spotify';
-            
-            await storage.createService({
-              apiId: id,
-              externalId: serviceId,
-              name: serviceName,
-              platform: platform,
-              category: serviceData.type || serviceData.category || 'Genel',
-              minQuantity: parseInt(serviceData.min) || 1,
-              maxQuantity: parseInt(serviceData.max) || 10000,
-              isActive: true
-            });
-            addedCount++;
+          // Bulk insert ile tüm batch'i tek seferde ekle
+          if (servicesToCreate.length > 0) {
+            await storage.createServicesBulk(servicesToCreate);
           }
-        } catch (serviceError) {
-          console.error(`Servis işlenirken hata (ID: ${serviceData.service || serviceData.id}):`, serviceError.message);
-          continue; // Hata durumunda sonraki servise geç
-        }
+          
+          return servicesToCreate.length;
+        });
+        
+        // Batch'leri bekle ve sonuçları topla
+        const batchResults = await Promise.all(batchPromises);
+        const batchTotal = batchResults.reduce((sum, count) => sum + count, 0);
+        addedCount += batchTotal;
+        
+        // Progress güncellemesi
+        const processedBatches = Math.min(i + PARALLEL_BATCHES, batches.length);
+        console.log(`İşlenen batch: ${processedBatches}/${batches.length} - Toplam eklenen: ${addedCount} (%${Math.round(processedCount/limitedTotal*100)})`);
       }
       
       console.log(`Tamamlandı: ${addedCount} yeni servis eklendi, toplam ${processedCount} servis işlendi.`);

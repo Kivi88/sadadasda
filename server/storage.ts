@@ -15,6 +15,7 @@ export interface IStorage {
   getServicesByApi(apiId: number): Promise<Service[]>;
   getService(id: number): Promise<Service | undefined>;
   createService(service: InsertService): Promise<Service>;
+  createServicesBulk(services: InsertService[]): Promise<Service[]>;
   updateService(id: number, service: Partial<InsertService>): Promise<Service>;
   deleteService(id: number): Promise<void>;
   
@@ -81,6 +82,25 @@ export class DatabaseStorage implements IStorage {
   async createService(service: InsertService): Promise<Service> {
     const [newService] = await db.insert(services).values(service).returning();
     return newService;
+  }
+  
+  async createServicesBulk(servicesToCreate: InsertService[]): Promise<Service[]> {
+    if (servicesToCreate.length === 0) return [];
+    
+    // Split into chunks of 100 to avoid query limits
+    const CHUNK_SIZE = 100;
+    const chunks = [];
+    for (let i = 0; i < servicesToCreate.length; i += CHUNK_SIZE) {
+      chunks.push(servicesToCreate.slice(i, i + CHUNK_SIZE));
+    }
+    
+    const results = [];
+    for (const chunk of chunks) {
+      const insertedServices = await db.insert(services).values(chunk).returning();
+      results.push(...insertedServices);
+    }
+    
+    return results;
   }
   
   async updateService(id: number, service: Partial<InsertService>): Promise<Service> {

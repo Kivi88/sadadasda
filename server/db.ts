@@ -11,9 +11,10 @@ if (!process.env.DATABASE_URL) {
 // Use standard PostgreSQL connection instead of serverless WebSocket
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 10,
-  idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 5000,
+  max: 20, // Increased connection pool size
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  acquireTimeoutMillis: 60000,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
