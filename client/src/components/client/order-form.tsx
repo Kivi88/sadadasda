@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShoppingCart, Copy, ExternalLink } from "lucide-react";
+import { ShoppingCart, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/api";
 import { useLocation } from "wouter";
@@ -100,7 +100,7 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
   };
 
   return (
-    <Card className="fade-in">
+    <Card className="slide-up">
       <CardHeader>
         <CardTitle className="text-center">Sipariş Detayları</CardTitle>
         <p className="text-sm text-muted-foreground text-center">
@@ -139,13 +139,20 @@ export default function OrderForm({ keyValue, service, onOrderCreated }: OrderFo
           className="w-full btn-primary"
         >
           <ShoppingCart className="w-4 h-4 mr-2" />
-          {createOrderMutation.isPending ? "Oluşturuluyor..." : "Sipariş Oluştur"}
+          {createOrderMutation.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 loading-spinner" />
+              "Oluşturuluyor..."
+            </>
+          ) : (
+            "Sipariş Oluştur"
+          )}
         </Button>
       </CardContent>
 
       {/* Başarı Modal'ı */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bounce-in">
           <DialogHeader>
             <DialogTitle className="text-center text-green-600">
               🎉 Sipariş Başarıyla Oluşturuldu!

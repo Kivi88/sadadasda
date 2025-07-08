@@ -519,13 +519,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let orderStatus = "pending";
       
       try {
-        const apiUrl = `${api.baseUrl}/v1/add`;
+        const baseUrl = api.url.replace(/\/+$/, ''); // Remove trailing slashes
+        const apiUrl = `${baseUrl}/v1/add`;
         const apiData = {
           key: api.apiKey,
           service: service.externalId,
           link: link,
           quantity: quantity
         };
+
+        console.log(`API URL: ${apiUrl}, Service ID: ${service.externalId}`);
+        console.log(`API Data:`, apiData);
 
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -540,7 +544,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           externalOrderId = result.order || result.id || null;
           orderStatus = "processing";
           
-          console.log(`Sipariş API'ye başarıyla gönderildi. External Order ID: ${externalOrderId}`);
+          console.log(`API URL: ${apiUrl}, Service ID: ${service.externalId}`);
+        console.log(`API Data:`, apiData);
+        console.log(`Sipariş API'ye başarıyla gönderildi. External Order ID: ${externalOrderId}`);
           
           // Key'in kullanılan miktarını güncelle
           await storage.updateKey(key.id, {
