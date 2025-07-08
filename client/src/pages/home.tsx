@@ -89,7 +89,9 @@ export default function Home() {
     queryKey: ["/api/orders/search", orderSearchId],
     enabled: !!orderSearchId && orderSearchId.length > 0,
     queryFn: async () => {
-      const response = await fetch(`/api/orders/search?orderId=${orderSearchId}`);
+      // Remove # prefix if present
+      const cleanOrderId = orderSearchId.trim().replace(/^#/, '');
+      const response = await fetch(`/api/orders/search?orderId=${encodeURIComponent(cleanOrderId)}`);
       if (!response.ok) {
         throw new Error('Order not found');
       }
@@ -259,7 +261,7 @@ export default function Home() {
               <div className="space-y-4">
                 <Input
                   type="text"
-                  placeholder="Sipariş ID (örn: #2384344)"
+                  placeholder="Sipariş ID (örn: #2384344 veya 2384344)"
                   value={orderSearchId}
                   onChange={(e) => setOrderSearchId(e.target.value)}
                   className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"

@@ -68,7 +68,9 @@ export default function OrderSearch() {
       return;
     }
 
-    searchOrderMutation.mutate(orderId.trim());
+    // Remove # prefix if present
+    const cleanOrderId = orderId.trim().replace(/^#/, '');
+    searchOrderMutation.mutate(cleanOrderId);
   };
 
   const copyOrderId = async (orderIdToCopy: string) => {
@@ -116,7 +118,7 @@ export default function OrderSearch() {
                 id="orderSearchId"
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
-                placeholder="Sipariş ID"
+                placeholder="Sipariş ID (örn: #2384344 veya 2384344)"
                 className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500/20 h-12 text-lg"
                 onKeyPress={(e) => {
                   if (e.key === "Enter") {

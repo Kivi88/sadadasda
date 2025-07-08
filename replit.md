@@ -217,6 +217,12 @@ npm run dev      # Start development server
   - Created intuitive UI in admin panel for key download requests
   - Keys are filtered by name and exported as CSV files with proper headers
   - User requested feature: "şimdi Key indir diye bi ksım ekle oraya key oluştururken girdiğimiz adı gircez"
+- July 08, 2025. **Order Search Enhancement for # Prefix Support**:
+  - Enhanced order search to accept order IDs both with and without # prefix
+  - Updated frontend to automatically strip # prefix before API calls
+  - Backend already supported # prefix handling in search endpoint
+  - Updated placeholder text to show both formats are supported: "#2384344 veya 2384344"
+  - User reported issue: "sipariş sorgula da sipariş id nin başına # gelince kabul etmiyor"
 
 ## User Preferences
 
