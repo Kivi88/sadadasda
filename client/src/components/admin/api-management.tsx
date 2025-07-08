@@ -26,7 +26,8 @@ export default function ApiManagement() {
 
   const createApiMutation = useMutation({
     mutationFn: async (data: { name: string; url: string; apiKey: string; isActive: boolean }) => {
-      return await apiRequest("POST", "/api/apis", data);
+      const response = await apiRequest("POST", "/api/apis", data);
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -51,7 +52,8 @@ export default function ApiManagement() {
 
   const deleteApiMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/apis/${id}`);
+      const response = await apiRequest("DELETE", `/api/apis/${id}`);
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -72,12 +74,14 @@ export default function ApiManagement() {
 
   const fetchServicesMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest("POST", `/api/apis/${id}/fetch-services`);
+      const response = await apiRequest("POST", `/api/apis/${id}/fetch-services`);
+      return await response.json();
     },
     onSuccess: (data) => {
+      const count = data?.addedCount ?? 0;
       toast({
         title: "Başarılı",
-        description: `${data.addedCount} servis çekildi`,
+        description: `${count} servis çekildi`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
     },

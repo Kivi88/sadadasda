@@ -92,8 +92,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/apis/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Önce bu API'ye bağlı servisleri sil
+      const services = await storage.getServicesByApi(id);
+      for (const service of services) {
+        await storage.deleteService(service.id);
+      }
+      
+      // Sonra API'yi sil
       await storage.deleteApi(id);
-      res.json({ message: "API silindi" });
+      res.json({ message: "API ve bağlı servisler silindi" });
     } catch (error) {
       console.error("Error deleting API:", error);
       res.status(500).json({ message: "API silinemedi" });
