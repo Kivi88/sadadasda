@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -15,17 +16,37 @@ import {
   Activity,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  LogOut
 } from "lucide-react";
 import StatsCard from "@/components/ui/stats-card";
 import KeyManagement from "@/components/admin/key-management";
 import ApiManagement from "@/components/admin/api-management";
 import ServiceManagement from "@/components/admin/service-management";
 import OrderManagement from "@/components/admin/order-management";
-import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  // Admin authentication check
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("admin_authenticated");
+    if (!isAuthenticated) {
+      setLocation("/admin");
+    }
+  }, [setLocation]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_authenticated");
+    toast({
+      title: "Çıkış yapıldı",
+      description: "Admin panelinden çıkış yaptınız",
+    });
+    setLocation("/admin");
+  };
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/stats"],
@@ -94,12 +115,13 @@ export default function AdminDashboard() {
               Siparişler
             </button>
             
-            <Link href="/client">
-              <button className="sidebar-item w-full">
-                <Users className="w-4 h-4 mr-3" />
-                Müşteri Paneli
-              </button>
-            </Link>
+            <button
+              onClick={() => window.open("/", "_blank")}
+              className="sidebar-item w-full"
+            >
+              <Users className="w-4 h-4 mr-3" />
+              Müşteri Paneli
+            </button>
           </div>
         </nav>
       </div>
@@ -121,10 +143,20 @@ export default function AdminDashboard() {
                 <span className="text-sm">Yeni Ekle</span>
               </Button>
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                  <Users className="w-4 h-4" />
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium">Admin</span>
                 </div>
-                <span className="text-sm font-medium">Admin</span>
+                <Button
+                  onClick={handleLogout}
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           </div>
