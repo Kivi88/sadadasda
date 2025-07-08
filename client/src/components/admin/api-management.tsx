@@ -122,7 +122,7 @@ export default function ApiManagement() {
     const baseUrl = api.url.replace('/v2', '/v1');
     const testUrl = `${baseUrl}/services`;
     const testData = {
-      key: api.key,
+      key: api.apiKey,
       action: "services"
     };
 

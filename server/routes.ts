@@ -151,25 +151,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             {
               method: "POST",
               headers: { "Content-Type": "application/json", "User-Agent": "KiwiPazari/1.0" },
-              body: JSON.stringify({ key: api.key, action: "services" })
+              body: JSON.stringify({ key: api.apiKey, action: "services" })
             },
             // POST sadece key ile
             {
               method: "POST", 
               headers: { "Content-Type": "application/json", "User-Agent": "KiwiPazari/1.0" },
-              body: JSON.stringify({ key: api.key })
+              body: JSON.stringify({ key: api.apiKey })
             },
             // GET ile query parametreleri
             {
               method: "GET",
               headers: { "User-Agent": "KiwiPazari/1.0" },
-              url: `${endpoint}?key=${api.key}&action=services`
+              url: `${endpoint}?key=${api.apiKey}&action=services`
             },
             // GET sadece key ile
             {
               method: "GET",
               headers: { "User-Agent": "KiwiPazari/1.0" },
-              url: `${endpoint}?key=${api.key}`
+              url: `${endpoint}?key=${api.apiKey}`
             }
           ];
           
