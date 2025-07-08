@@ -117,7 +117,42 @@ export default function ApiManagement() {
       title: "Test Başlatıldı",
       description: `${api.name} API'si test ediliyor...`,
     });
-    // TODO: Implement actual API testing
+    
+    // API URL'sini v2 olacak şekilde düzenle
+    const baseUrl = api.url.replace('/v1', '/v2');
+    const testUrl = `${baseUrl}/services`;
+    const testData = {
+      key: api.key,
+      action: "services"
+    };
+
+    fetch(testUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "KiwiPazari/1.0"
+      },
+      body: JSON.stringify(testData)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      toast({
+        title: "Başarılı",
+        description: `API bağlantısı başarılı. ${Array.isArray(data) ? data.length : 0} servis bulundu.`,
+      });
+    })
+    .catch(error => {
+      toast({
+        title: "Hata",
+        description: `API bağlantısı başarısız: ${error.message}`,
+        variant: "destructive",
+      });
+    });
   };
 
   return (

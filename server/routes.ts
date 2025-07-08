@@ -118,8 +118,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "API bulunamadı" });
       }
 
+      // API URL'sini v2 olacak şekilde düzenle
+      const baseUrl = api.url.replace('/v1', '/v2');
+      
       // Gerçek API'den servisleri çek
-      const apiResponse = await fetch(`${api.url}/services`, {
+      const apiResponse = await fetch(`${baseUrl}/services`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
