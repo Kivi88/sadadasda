@@ -132,6 +132,37 @@ export default function OrderSearch() {
           
           {searchedOrder && (
             <div className="space-y-4">
+              {/* Progress Tracker */}
+              <div className="bg-gradient-to-r from-blue-900/20 to-green-900/20 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`flex items-center space-x-2 ${searchedOrder.status === 'pending' ? 'text-blue-400' : 'text-green-400'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${searchedOrder.status === 'pending' ? 'bg-blue-500' : 'bg-green-500'}`}>
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-sm font-medium">Sipariş Alındı</span>
+                  </div>
+                  <div className={`h-0.5 flex-1 mx-4 ${searchedOrder.status === 'processing' || searchedOrder.status === 'completed' ? 'bg-blue-500' : 'bg-gray-600'}`}></div>
+                  <div className={`flex items-center space-x-2 ${searchedOrder.status === 'processing' ? 'text-blue-400' : searchedOrder.status === 'completed' ? 'text-green-400' : 'text-gray-400'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${searchedOrder.status === 'processing' ? 'bg-blue-500' : searchedOrder.status === 'completed' ? 'bg-green-500' : 'bg-gray-600'}`}>
+                      {searchedOrder.status === 'processing' ? (
+                        <Loader2 className="w-4 h-4 text-white animate-spin" />
+                      ) : (
+                        <Clock className="w-4 h-4 text-white" />
+                      )}
+                    </div>
+                    <span className="text-sm font-medium">İşleniyor</span>
+                  </div>
+                  <div className={`h-0.5 flex-1 mx-4 ${searchedOrder.status === 'completed' ? 'bg-green-500' : 'bg-gray-600'}`}></div>
+                  <div className={`flex items-center space-x-2 ${searchedOrder.status === 'completed' ? 'text-green-400' : 'text-gray-400'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${searchedOrder.status === 'completed' ? 'bg-green-500' : 'bg-gray-600'}`}>
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-sm font-medium">Tamamlandı</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Details */}
               <div className="bg-muted/50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">Sipariş ID:</span>

@@ -694,6 +694,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Sipariş bulunamadı" });
       }
 
+      // Check real-time status from external API if we have externalOrderId
+      if (order.externalOrderId && order.service) {
+        try {
+          const api = await storage.getApi(order.service.apiId);
+          if (api && api.isActive) {
+            console.log(`📡 Checking real-time status for order ${order.orderId} (External ID: ${order.externalOrderId})`);
+            
+            const statusResponse = await fetch(`${api.baseUrl}/status?key=${api.apiKey}&order=${order.externalOrderId}`);
+            
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              console.log(`📊 Status response:`, statusData);
+              
+              // Map external status to our internal status
+              let newStatus = order.status;
+              if (statusData.status === "Completed" || statusData.status === "completed") {
+                newStatus = "completed";
+              } else if (statusData.status === "Processing" || statusData.status === "processing") {
+                newStatus = "processing";
+              } else if (statusData.status === "Pending" || statusData.status === "pending") {
+                newStatus = "pending";
+              } else if (statusData.status === "Cancelled" || statusData.status === "cancelled") {
+                newStatus = "cancelled";
+              }
+              
+              // Update order status if it changed
+              if (newStatus !== order.status) {
+                console.log(`🔄 Status updated from ${order.status} to ${newStatus}`);
+                await storage.updateOrder(order.id, { status: newStatus });
+                order.status = newStatus;
+              }
+            }
+          }
+        } catch (statusError) {
+          console.error("Error checking real-time status:", statusError);
+          // Continue without failing the request
+        }
+      }
+
       console.log(`✅ Sipariş bulundu: ${order.orderId}`);
       res.json(order);
     } catch (error) {
@@ -702,7 +741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Individual order fetch route
+  // Individual order fetch route with real-time status check
   app.get("/api/orders/:orderId", async (req, res) => {
     try {
       const orderId = req.params.orderId;
@@ -710,6 +749,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!order) {
         return res.status(404).json({ message: "Sipariş bulunamadı" });
+      }
+
+      // Check real-time status from external API if we have externalOrderId
+      if (order.externalOrderId && order.service) {
+        try {
+          const api = await storage.getApi(order.service.apiId);
+          if (api && api.isActive) {
+            console.log(`📡 Checking real-time status for order ${order.orderId} (External ID: ${order.externalOrderId})`);
+            
+            const statusResponse = await fetch(`${api.baseUrl}/status?key=${api.apiKey}&order=${order.externalOrderId}`);
+            
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              console.log(`📊 Status response:`, statusData);
+              
+              // Map external status to our internal status
+              let newStatus = order.status;
+              if (statusData.status === "Completed" || statusData.status === "completed") {
+                newStatus = "completed";
+              } else if (statusData.status === "Processing" || statusData.status === "processing") {
+                newStatus = "processing";
+              } else if (statusData.status === "Pending" || statusData.status === "pending") {
+                newStatus = "pending";
+              } else if (statusData.status === "Cancelled" || statusData.status === "cancelled") {
+                newStatus = "cancelled";
+              }
+              
+              // Update order status if it changed
+              if (newStatus !== order.status) {
+                console.log(`🔄 Status updated from ${order.status} to ${newStatus}`);
+                await storage.updateOrder(order.id, { status: newStatus });
+                order.status = newStatus;
+              }
+            }
+          }
+        } catch (statusError) {
+          console.error("Error checking real-time status:", statusError);
+          // Continue without failing the request
+        }
       }
 
       res.json(order);
