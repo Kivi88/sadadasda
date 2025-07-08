@@ -26,12 +26,8 @@ export default function Home() {
   // Key validation
   const validateKeyMutation = useMutation({
     mutationFn: async (key: string) => {
-      const response = await apiRequest(`/api/keys/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyValue: key })
-      });
-      return response;
+      const response = await apiRequest("POST", `/api/keys/validate`, { keyValue: key });
+      return response.json();
     },
     onSuccess: (data) => {
       setValidatedKey(data.key);
@@ -53,12 +49,8 @@ export default function Home() {
   // Order creation
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      const response = await apiRequest(`/api/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData)
-      });
-      return response;
+      const response = await apiRequest("POST", `/api/orders`, orderData);
+      return response.json();
     },
     onSuccess: (data) => {
       setCreatedOrder(data);
@@ -97,8 +89,11 @@ export default function Home() {
     queryKey: ["/api/orders/search", orderSearchId],
     enabled: !!orderSearchId && orderSearchId.length > 0,
     queryFn: async () => {
-      const response = await apiRequest(`/api/orders/search?orderId=${orderSearchId}`);
-      return response;
+      const response = await fetch(`/api/orders/search?orderId=${orderSearchId}`);
+      if (!response.ok) {
+        throw new Error('Order not found');
+      }
+      return response.json();
     }
   });
 
