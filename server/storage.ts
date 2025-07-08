@@ -140,7 +140,14 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getOrderByOrderId(orderId: string): Promise<Order | undefined> {
-    const [order] = await db.select().from(orders).where(eq(orders.orderId, orderId));
+    console.log(`🔍 Storage: Searching for order with ID: "${orderId}"`);
+    
+    // Try to find the order
+    const result = await db.select().from(orders).where(eq(orders.orderId, orderId));
+    console.log(`🔍 Storage: Query result:`, result);
+    
+    const order = result[0];
+    console.log(`🔍 Storage: Found order:`, order ? `ID: ${order.orderId}` : 'null');
     return order;
   }
   

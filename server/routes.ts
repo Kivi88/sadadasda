@@ -536,30 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sipariş sorgulama endpoint'i
-  app.get("/api/orders/:orderId", async (req, res) => {
-    try {
-      const { orderId } = req.params;
-      const order = await storage.getOrderByOrderId(orderId);
-      
-      if (!order) {
-        return res.status(404).json({ message: "Sipariş bulunamadı" });
-      }
 
-      // Servis bilgilerini de al
-      const service = await storage.getService(order.serviceId);
-      const key = await storage.getKey(order.keyId);
-
-      res.json({
-        ...order,
-        service,
-        key: key ? { name: key.name, keyValue: key.keyValue } : null
-      });
-    } catch (error) {
-      console.error("Error fetching order:", error);
-      res.status(500).json({ message: "Sipariş getirilemedi" });
-    }
-  });
 
   app.post("/api/orders", async (req, res) => {
     try {
@@ -693,6 +670,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Order Search Route (must be before parameterized route)
+  app.get("/api/orders/search", async (req, res) => {
+    try {
+      const { orderId } = req.query;
+      console.log(`🔍 Search request received for: "${orderId}"`);
+      
+      if (!orderId) {
+        return res.status(400).json({ message: "Sipariş ID gerekli" });
+      }
+
+      const searchId = orderId.toString();
+      console.log(`🔍 Sipariş aranıyor: "${searchId}"`);
+      
+      // If the search ID doesn't start with #, add it
+      const fullOrderId = searchId.startsWith('#') ? searchId : `#${searchId}`;
+      console.log(`🔍 Tam sipariş ID: "${fullOrderId}"`);
+      
+      const order = await storage.getOrderByOrderId(fullOrderId);
+      
+      if (!order) {
+        console.log(`❌ Sipariş bulunamadı: "${fullOrderId}"`);
+        return res.status(404).json({ message: "Sipariş bulunamadı" });
+      }
+
+      console.log(`✅ Sipariş bulundu: ${order.orderId}`);
+      res.json(order);
+    } catch (error) {
+      console.error("Error searching order:", error);
+      res.status(500).json({ message: "Sipariş aranamadı" });
+    }
+  });
+
+  // Individual order fetch route
   app.get("/api/orders/:orderId", async (req, res) => {
     try {
       const orderId = req.params.orderId;
@@ -709,6 +719,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+
   app.put("/api/orders/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -718,30 +730,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating order:", error);
       res.status(500).json({ message: "Sipariş güncellenemedi" });
-    }
-  });
-
-
-
-  // Order Search Route
-  app.get("/api/orders/search", async (req, res) => {
-    try {
-      const { orderId } = req.query;
-      
-      if (!orderId) {
-        return res.status(400).json({ message: "Sipariş ID gerekli" });
-      }
-
-      const order = await storage.getOrderByOrderId(orderId.toString());
-      
-      if (!order) {
-        return res.status(404).json({ message: "Sipariş bulunamadı" });
-      }
-
-      res.json(order);
-    } catch (error) {
-      console.error("Error searching order:", error);
-      res.status(500).json({ message: "Sipariş aranamadı" });
     }
   });
 
