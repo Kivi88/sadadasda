@@ -81,7 +81,7 @@ export default function ApiManagement() {
       const count = data?.addedCount ?? 0;
       toast({
         title: "Başarılı",
-        description: `${count} servis çekildi`,
+        description: count > 0 ? `${count} yeni servis eklendi` : "Tüm servisler zaten mevcut",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
     },
@@ -121,15 +121,21 @@ export default function ApiManagement() {
   };
 
   return (
-    <div className="p-6 fade-in">
+    <div className="p-6 fade-in max-w-7xl mx-auto">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-foreground">API Yönetimi</h3>
+          <div>
+            <h3 className="text-2xl font-bold text-foreground">API Yönetimi</h3>
+            <p className="text-muted-foreground mt-1">Harici API sağlayıcılarını yönetin ve servislerini senkronize edin</p>
+          </div>
         </div>
         
-        <Card className="mb-6">
+        <Card className="mb-6 border-2 border-dashed border-border/50 hover:border-primary/50 transition-colors">
           <CardHeader>
-            <CardTitle>API Ekle</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-primary" />
+              Yeni API Ekle
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -183,7 +189,8 @@ export default function ApiManagement() {
               <Button 
                 onClick={handleCreateApi}
                 disabled={createApiMutation.isPending}
-                className="btn-success"
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+                size="lg"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 {createApiMutation.isPending ? "Ekleniyor..." : "API Ekle"}
@@ -195,10 +202,13 @@ export default function ApiManagement() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Mevcut API'ler</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <div className="w-2 h-6 bg-primary rounded-full"></div>
+            Mevcut API'ler
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {apisLoading ? (
               <div className="col-span-full text-center py-8">
                 <div className="pulse-loader">Yükleniyor...</div>
@@ -209,71 +219,74 @@ export default function ApiManagement() {
               </div>
             ) : (
               apis?.map((api: Api) => (
-                <Card key={api.id} className="bg-muted/50 border-border">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h5 className="font-medium text-foreground">{api.name}</h5>
-                      <Badge className={api.isActive ? "status-active" : "status-inactive"}>
+                <Card key={api.id} className="bg-gradient-to-br from-card to-muted/30 border-border hover:border-primary/30 transition-all duration-200 hover:shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h5 className="font-semibold text-foreground text-lg">{api.name}</h5>
+                      <Badge className={api.isActive ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}>
                         {api.isActive ? "Aktif" : "Pasif"}
                       </Badge>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Servis Sayısı:</span>
-                        <span className="text-foreground">{api.serviceCount || 0}</span>
+                    <div className="space-y-3 mb-4">
+                      <div className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
+                        <span className="text-muted-foreground font-medium">Servis Sayısı:</span>
+                        <span className="text-foreground font-semibold">{api.serviceCount || 0}</span>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Son Güncelleme:</span>
-                        <span className="text-foreground">
+                      <div className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
+                        <span className="text-muted-foreground font-medium">Son Güncelleme:</span>
+                        <span className="text-foreground font-semibold">
                           {api.lastSync ? new Date(api.lastSync).toLocaleString("tr-TR") : "Hiç"}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Yanıt Süresi:</span>
-                        <span className="text-foreground">
+                      <div className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded">
+                        <span className="text-muted-foreground font-medium">Yanıt Süresi:</span>
+                        <span className="text-foreground font-semibold">
                           {api.responseTime ? `${api.responseTime}ms` : "Bilinmiyor"}
                         </span>
                       </div>
                     </div>
-                    <div className="mt-3 flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => testApi(api)}
-                        className="btn-primary"
-                      >
-                        <TestTube className="w-4 h-4 mr-1" />
-                        Test Et
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => fetchServicesMutation.mutate(api.id)}
-                        disabled={fetchServicesMutation.isPending}
-                        className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500 hover:border-blue-600"
-                      >
-                        <Download className="w-4 h-4 mr-1" />
-                        {fetchServicesMutation.isPending ? "Çekiliyor..." : "Servis Çek"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-muted hover:bg-muted/80"
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Düzenle
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteApiMutation.mutate(api.id)}
-                        disabled={deleteApiMutation.isPending}
-                        className="bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600"
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        {deleteApiMutation.isPending ? "Siliniyor..." : "Sil"}
-                      </Button>
-                      </Button>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => testApi(api)}
+                          className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/30"
+                        >
+                          <TestTube className="w-4 h-4 mr-1" />
+                          Test
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchServicesMutation.mutate(api.id)}
+                          disabled={fetchServicesMutation.isPending}
+                          className="flex-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          {fetchServicesMutation.isPending ? "Çekiliyor..." : "Çek"}
+                        </Button>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Düzenle
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteApiMutation.mutate(api.id)}
+                          disabled={deleteApiMutation.isPending}
+                          className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          {deleteApiMutation.isPending ? "Siliniyor..." : "Sil"}
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
