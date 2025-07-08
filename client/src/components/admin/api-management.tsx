@@ -250,10 +250,10 @@ export default function ApiManagement() {
                         size="sm"
                         onClick={() => fetchServicesMutation.mutate(api.id)}
                         disabled={fetchServicesMutation.isPending}
-                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500 hover:border-blue-600"
                       >
                         <Download className="w-4 h-4 mr-1" />
-                        Servis Çek
+                        {fetchServicesMutation.isPending ? "Çekiliyor..." : "Servis Çek"}
                       </Button>
                       <Button
                         variant="outline"
@@ -268,10 +268,11 @@ export default function ApiManagement() {
                         size="sm"
                         onClick={() => deleteApiMutation.mutate(api.id)}
                         disabled={deleteApiMutation.isPending}
-                        className="bg-red-500 hover:bg-red-600 text-white"
+                        className="bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Sil
+                        {deleteApiMutation.isPending ? "Siliniyor..." : "Sil"}
+                      </Button>
                       </Button>
                     </div>
                   </CardContent>
