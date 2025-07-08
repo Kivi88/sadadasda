@@ -83,47 +83,55 @@ export default function OrderSearch() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center">Sipariş Sorgula</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Input
-            id="orderSearchId"
-            value={orderId}
-            onChange={(e) => setOrderId(e.target.value)}
-            placeholder="Sipariş ID"
-            onKeyPress={(e) => {
-              if (e.key === "Enter") {
-                handleSearchOrder();
-              }
-            }}
-          />
-          
-          <Button
-            onClick={handleSearchOrder}
-            disabled={searchOrderMutation.isPending}
-            className="w-full btn-warning"
-          >
-            {searchOrderMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4 mr-2" />
-            )}
-            {searchOrderMutation.isPending ? "Aranıyor..." : "Sipariş Sorgula"}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="max-w-md mx-auto">
+        <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700">
+          <CardHeader className="text-center pb-3">
+            <CardTitle className="text-xl font-bold text-white">Sipariş Sorgula</CardTitle>
+            <p className="text-sm text-slate-400 mt-1">Sipariş ID'nizi girin</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Input
+                id="orderSearchId"
+                value={orderId}
+                onChange={(e) => setOrderId(e.target.value)}
+                placeholder="Sipariş ID"
+                className="bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-blue-500/20 h-12 text-lg"
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearchOrder();
+                  }
+                }}
+              />
+              <Search className="absolute right-3 top-3 h-6 w-6 text-slate-400" />
+            </div>
+            
+            <Button
+              onClick={handleSearchOrder}
+              disabled={searchOrderMutation.isPending}
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 rounded-lg transition-all duration-200 transform hover:scale-105"
+            >
+              {searchOrderMutation.isPending ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Search className="w-5 h-5 mr-2" />
+              )}
+              {searchOrderMutation.isPending ? "Aranıyor..." : "Sipariş Sorgula"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-md bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700">
+          <DialogHeader className="border-b border-slate-700 pb-3">
             <div className="flex items-center justify-between">
-              <DialogTitle>Sipariş Detayları</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-white">Sipariş Detayları</DialogTitle>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowModal(false)}
+                className="text-slate-400 hover:text-white hover:bg-slate-700"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -131,38 +139,36 @@ export default function OrderSearch() {
           </DialogHeader>
           
           {searchedOrder && (
-            <div className="space-y-4">
-              {/* Simple Order Details */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Sipariş ID:</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-sm">{searchedOrder.orderId}</span>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => copyOrderId(searchedOrder.orderId)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </div>
+            <div className="space-y-4 pt-4">
+              {/* Order Status Header */}
+              <div className="text-center p-4 bg-slate-700/50 rounded-lg">
+                <div className="text-2xl font-bold text-white mb-1">{searchedOrder.orderId}</div>
+                <div className={`text-sm px-3 py-1 rounded-full inline-block font-medium ${
+                  searchedOrder.status === 'completed' 
+                    ? 'bg-green-600 text-white' 
+                    : searchedOrder.status === 'processing' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-orange-600 text-white'
+                }`}>
+                  {searchedOrder.status === 'completed' ? 'Tamamlandı' : 
+                   searchedOrder.status === 'processing' ? 'İşleniyor' : 
+                   searchedOrder.status === 'pending' ? 'Beklemede' : searchedOrder.status}
                 </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Durum:</span>
-                  <span className="text-sm">{searchedOrder.status}</span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Miktar:</span>
-                  <span className="text-sm font-semibold">{searchedOrder.quantity.toLocaleString()}</span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Link:</span>
-                  <span className="text-sm truncate max-w-[200px]">{searchedOrder.link}</span>
+              </div>
+
+              {/* Order Details */}
+              <div className="bg-slate-700/30 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400">Miktar:</span>
+                  <span className="text-sm font-semibold text-white">{searchedOrder.quantity.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Oluşturulma:</span>
-                  <span className="text-sm">{new Date(searchedOrder.createdAt).toLocaleString("tr-TR")}</span>
+                  <span className="text-sm text-slate-400">Link:</span>
+                  <span className="text-sm truncate max-w-[200px] text-blue-400">{searchedOrder.link}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400">Oluşturulma:</span>
+                  <span className="text-sm text-white">{new Date(searchedOrder.createdAt).toLocaleString("tr-TR")}</span>
                 </div>
               </div>
             </div>
