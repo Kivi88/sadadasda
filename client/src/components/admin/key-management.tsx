@@ -155,10 +155,10 @@ export default function KeyManagement() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="service">Servis Seç</Label>
+                <Label htmlFor="service">Servis Adı Girin</Label>
                 <Select value={selectedService} onValueChange={setSelectedService}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Servis seçin..." />
+                    <SelectValue placeholder="Servis adı girin..." />
                   </SelectTrigger>
                   <SelectContent>
                     {services?.map((service: Service) => (
