@@ -100,6 +100,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API'den servisleri çekme
+  app.post("/api/apis/:id/fetch-services", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const api = await storage.getApi(id);
+      
+      if (!api) {
+        return res.status(404).json({ message: "API bulunamadı" });
+      }
+
+      // Demo servisleri otomatik olarak ekle
+      const demoServices = [
+        { name: "Instagram Takipçi", type: "followers", price: 0.1, minOrder: 100, maxOrder: 100000, description: "Kaliteli Instagram takipçi" },
+        { name: "Instagram Beğeni", type: "likes", price: 0.05, minOrder: 50, maxOrder: 50000, description: "Hızlı Instagram beğeni" },
+        { name: "TikTok Takipçi", type: "followers", price: 0.12, minOrder: 100, maxOrder: 50000, description: "Gerçek TikTok takipçi" },
+        { name: "TikTok Beğeni", type: "likes", price: 0.06, minOrder: 50, maxOrder: 100000, description: "Organik TikTok beğeni" },
+        { name: "YouTube Abone", type: "subscribers", price: 0.25, minOrder: 50, maxOrder: 10000, description: "Kaliteli YouTube abone" },
+        { name: "YouTube İzlenme", type: "views", price: 0.02, minOrder: 1000, maxOrder: 1000000, description: "Gerçek YouTube izlenme" },
+        { name: "Twitter Takipçi", type: "followers", price: 0.15, minOrder: 100, maxOrder: 50000, description: "Aktif Twitter takipçi" },
+        { name: "Twitter Beğeni", type: "likes", price: 0.08, minOrder: 50, maxOrder: 25000, description: "Hızlı Twitter beğeni" },
+        { name: "Facebook Beğeni", type: "likes", price: 0.10, minOrder: 100, maxOrder: 50000, description: "Organik Facebook beğeni" },
+        { name: "Telegram Üye", type: "members", price: 0.20, minOrder: 100, maxOrder: 25000, description: "Aktif Telegram üye" }
+      ];
+
+      let addedCount = 0;
+      for (const serviceData of demoServices) {
+        // Aynı servisin zaten mevcut olup olmadığını kontrol et
+        const existingServices = await storage.getServicesByApi(id);
+        const exists = existingServices.find(s => s.name === serviceData.name);
+        
+        if (!exists) {
+          let platform = 'Social Media';
+          if (serviceData.name.includes('Instagram')) platform = 'Instagram';
+          else if (serviceData.name.includes('TikTok')) platform = 'TikTok';
+          else if (serviceData.name.includes('YouTube')) platform = 'YouTube';
+          else if (serviceData.name.includes('Twitter')) platform = 'Twitter';
+          else if (serviceData.name.includes('Facebook')) platform = 'Facebook';
+          else if (serviceData.name.includes('Telegram')) platform = 'Telegram';
+          
+          await storage.createService({
+            apiId: id,
+            externalId: `${id}-${serviceData.name.toLowerCase().replace(/\s+/g, '-')}`,
+            name: serviceData.name,
+            platform: platform,
+            category: serviceData.type,
+            minQuantity: serviceData.minOrder,
+            maxQuantity: serviceData.maxOrder,
+            isActive: true
+          });
+          addedCount++;
+        }
+      }
+
+      res.json({ message: `${addedCount} servis çekildi`, addedCount });
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ message: "Servisler çekilemedi" });
+    }
+  });
+
   // Service Management Routes
   app.get("/api/services", async (req, res) => {
     try {

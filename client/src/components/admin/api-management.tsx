@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TestTube, Edit } from "lucide-react";
+import { Plus, TestTube, Edit, Download, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/api";
 import type { Api } from "@shared/schema";
@@ -34,6 +34,7 @@ export default function ApiManagement() {
         description: "API başarıyla eklendi",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/apis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       setName("");
       setUrl("");
       setApiKey("");
@@ -43,6 +44,47 @@ export default function ApiManagement() {
       toast({
         title: "Hata",
         description: error.message || "API eklenemedi",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteApiMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/apis/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Başarılı",
+        description: "API başarıyla silindi",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/apis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error.message || "API silinemedi",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const fetchServicesMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("POST", `/api/apis/${id}/fetch-services`);
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Başarılı",
+        description: `${data.addedCount} servis çekildi`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error.message || "Servisler çekilemedi",
         variant: "destructive",
       });
     },
@@ -202,10 +244,30 @@ export default function ApiManagement() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => fetchServicesMutation.mutate(api.id)}
+                        disabled={fetchServicesMutation.isPending}
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        Servis Çek
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="bg-muted hover:bg-muted/80"
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Düzenle
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteApiMutation.mutate(api.id)}
+                        disabled={deleteApiMutation.isPending}
+                        className="bg-red-500 hover:bg-red-600 text-white"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Sil
                       </Button>
                     </div>
                   </CardContent>
