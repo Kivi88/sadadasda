@@ -505,6 +505,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sipariş sorgulama endpoint'i
+  app.get("/api/orders/:orderId", async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const order = await storage.getOrderByOrderId(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Sipariş bulunamadı" });
+      }
+
+      // Servis bilgilerini de al
+      const service = await storage.getService(order.serviceId);
+      const key = await storage.getKey(order.keyId);
+
+      res.json({
+        ...order,
+        service,
+        key: key ? { name: key.name, keyValue: key.keyValue } : null
+      });
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      res.status(500).json({ message: "Sipariş getirilemedi" });
+    }
+  });
+
   app.post("/api/orders", async (req, res) => {
     try {
       const { keyValue, link, quantity, serviceId } = req.body;

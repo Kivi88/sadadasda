@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, X, Copy } from "lucide-react";
+import { Search, X, Copy, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/api";
 import type { Order } from "@shared/schema";
 
 export default function OrderSearch() {
@@ -19,7 +18,10 @@ export default function OrderSearch() {
 
   const searchOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
-      const response = await apiRequest("GET", `/api/orders/${orderId}`);
+      const response = await fetch(`/api/orders/${orderId}`);
+      if (!response.ok) {
+        throw new Error("Sipariş bulunamadı");
+      }
       return response.json();
     },
     onSuccess: (order) => {
@@ -103,7 +105,11 @@ export default function OrderSearch() {
             disabled={searchOrderMutation.isPending}
             className="w-full btn-warning"
           >
-            <Search className="w-4 h-4 mr-2" />
+            {searchOrderMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Search className="w-4 h-4 mr-2" />
+            )}
             {searchOrderMutation.isPending ? "Aranıyor..." : "Sipariş Sorgula"}
           </Button>
         </CardContent>
@@ -147,17 +153,37 @@ export default function OrderSearch() {
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">Miktar:</span>
-                  <span className="text-sm">{searchedOrder.quantity?.toLocaleString()}</span>
+                  <span className="text-sm font-semibold">{searchedOrder.quantity.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">Durum:</span>
-                  {getStatusBadge(searchedOrder.status!)}
+                  {getStatusBadge(searchedOrder.status)}
                 </div>
+                {searchedOrder.service && (
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">Servis:</span>
+                    <span className="text-sm text-right max-w-[200px] truncate">{searchedOrder.service.name}</span>
+                  </div>
+                )}
+                {searchedOrder.externalOrderId && (
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-muted-foreground">API Sipariş ID:</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-sm">{searchedOrder.externalOrderId}</span>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => copyOrderId(searchedOrder.externalOrderId!)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Tarih:</span>
-                  <span className="text-sm">
-                    {new Date(searchedOrder.createdAt!).toLocaleString("tr-TR")}
-                  </span>
+                  <span className="text-sm text-muted-foreground">Oluşturulma:</span>
+                  <span className="text-sm">{new Date(searchedOrder.createdAt).toLocaleString("tr-TR")}</span>
                 </div>
               </div>
             </div>
