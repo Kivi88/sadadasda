@@ -14,7 +14,7 @@ function generateRandomKey(prefix: string = "KIWIPAZARI"): string {
 }
 
 function generateOrderId(): string {
-  return "ORD-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+  return "#" + Math.floor(1000000 + Math.random() * 9000000).toString();
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -687,6 +687,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating order:", error);
       res.status(500).json({ message: "Sipariş güncellenemedi" });
+    }
+  });
+
+  // Key Validation Route
+  app.post("/api/keys/validate", async (req, res) => {
+    try {
+      const { keyValue } = req.body;
+      
+      if (!keyValue) {
+        return res.status(400).json({ message: "Key değeri gerekli" });
+      }
+
+      const key = await storage.getKeyByValue(keyValue);
+      
+      if (!key) {
+        return res.status(404).json({ message: "Geçersiz key" });
+      }
+
+      if (!key.isActive) {
+        return res.status(400).json({ message: "Key deaktif durumda" });
+      }
+
+      if (key.usedAmount >= key.maxAmount) {
+        return res.status(400).json({ message: "Key kullanım limiti dolmuş" });
+      }
+
+      const service = await storage.getService(key.serviceId);
+      
+      if (!service) {
+        return res.status(404).json({ message: "Servis bulunamadı" });
+      }
+
+      res.json({ key, service });
+    } catch (error) {
+      console.error("Error validating key:", error);
+      res.status(500).json({ message: "Key doğrulanamadı" });
+    }
+  });
+
+  // Order Search Route
+  app.get("/api/orders/search", async (req, res) => {
+    try {
+      const { orderId } = req.query;
+      
+      if (!orderId) {
+        return res.status(400).json({ message: "Sipariş ID gerekli" });
+      }
+
+      const order = await storage.getOrderByOrderId(orderId.toString());
+      
+      if (!order) {
+        return res.status(404).json({ message: "Sipariş bulunamadı" });
+      }
+
+      res.json(order);
+    } catch (error) {
+      console.error("Error searching order:", error);
+      res.status(500).json({ message: "Sipariş aranamadı" });
     }
   });
 
