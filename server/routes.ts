@@ -603,6 +603,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Key download route - keyName'e göre tüm keyleri indir
+  app.post("/api/keys/download", [
+    body('keyName').isLength({ min: 1, max: 100 }).trim().escape(),
+  ], async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ message: "Geçersiz key adı" });
+      }
+
+      const { keyName } = req.body;
+      const allKeys = await storage.getKeys();
+      
+      // Aynı isme sahip keyleri filtrele
+      const matchingKeys = allKeys.filter(key => key.name === keyName);
+      
+      if (matchingKeys.length === 0) {
+        return res.status(404).json({ message: "Bu isimde key bulunamadı" });
+      }
+
+      // Key verilerini hazırla
+      const keyData = matchingKeys.map(key => ({
+        keyValue: key.keyValue,
+        name: key.name,
+        maxAmount: key.maxAmount,
+        usedAmount: key.usedAmount,
+        remainingAmount: (key.maxAmount || 1000) - (key.usedAmount || 0),
+        isActive: key.isActive,
+        createdAt: key.createdAt
+      }));
+
+      // CSV formatında hazırla
+      const csvHeaders = 'Key Value,Name,Max Amount,Used Amount,Remaining Amount,Status,Created At\n';
+      const csvData = keyData.map(key => 
+        `${key.keyValue},${key.name},${key.maxAmount},${key.usedAmount},${key.remainingAmount},${key.isActive ? 'Active' : 'Inactive'},${key.createdAt}`
+      ).join('\n');
+
+      const csvContent = csvHeaders + csvData;
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${keyName}_keys.csv"`);
+      res.send(csvContent);
+      
+    } catch (error) {
+      console.error("Error downloading keys:", error);
+      res.status(500).json({ message: "Keyler indirilemedi" });
+    }
+  });
+
   // Order Management Routes
   app.get("/api/orders", async (req, res) => {
     try {

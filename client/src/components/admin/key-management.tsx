@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Copy, Eye, EyeOff, Trash2 } from "lucide-react";
+import { Plus, Copy, Eye, EyeOff, Trash2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/api";
 import type { Key, Service } from "@shared/schema";
@@ -20,6 +20,7 @@ export default function KeyManagement() {
   const [maxAmount, setMaxAmount] = useState(1000);
   const [hiddenKeys, setHiddenKeys] = useState<Set<number>>(new Set());
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+  const [downloadKeyName, setDownloadKeyName] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const { toast } = useToast();
@@ -122,6 +123,47 @@ export default function KeyManagement() {
     },
   });
 
+  const downloadKeysMutation = useMutation({
+    mutationFn: async (keyName: string) => {
+      const response = await fetch("/api/keys/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ keyName }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Keyler indirilemedi");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${keyName}_keys.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Başarılı",
+        description: "Keyler başarıyla indirildi",
+      });
+      setDownloadKeyName("");
+    },
+    onError: (error) => {
+      toast({
+        title: "Hata",
+        description: error.message || "Keyler indirilemedi",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateKeys = async () => {
     if (!selectedService || !keyName) {
       toast({
@@ -183,47 +225,48 @@ export default function KeyManagement() {
           <h3 className="text-lg font-semibold text-foreground">Key Yönetimi</h3>
         </div>
         
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Key Oluştur</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="relative" ref={dropdownRef}>
-                <Label htmlFor="service">Servis Adı veya Servis ID</Label>
-                <Input
-                  id="service"
-                  value={serviceSearch}
-                  onChange={(e) => {
-                    setServiceSearch(e.target.value);
-                    setShowServiceDropdown(true);
-                  }}
-                  onFocus={() => setShowServiceDropdown(true)}
-                  placeholder="Servis adı veya ID girin..."
-                  className="w-full"
-                />
-                {showServiceDropdown && serviceSearch && filteredServices.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {filteredServices.map((service: Service) => (
-                      <div
-                        key={service.id}
-                        onClick={() => handleServiceSelect(service)}
-                        className="px-3 py-2 cursor-pointer hover:bg-muted border-b border-border last:border-b-0"
-                      >
-                        <div className="font-medium text-sm">{service.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          ID: {service.externalId} | Platform: {service.platform}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Key Oluştur</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="relative" ref={dropdownRef}>
+                  <Label htmlFor="service">Servis Adı veya Servis ID</Label>
+                  <Input
+                    id="service"
+                    value={serviceSearch}
+                    onChange={(e) => {
+                      setServiceSearch(e.target.value);
+                      setShowServiceDropdown(true);
+                    }}
+                    onFocus={() => setShowServiceDropdown(true)}
+                    placeholder="Servis adı veya ID girin..."
+                    className="w-full"
+                  />
+                  {showServiceDropdown && serviceSearch && filteredServices.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {filteredServices.map((service: Service) => (
+                        <div
+                          key={service.id}
+                          onClick={() => handleServiceSelect(service)}
+                          className="px-3 py-2 cursor-pointer hover:bg-muted border-b border-border last:border-b-0"
+                        >
+                          <div className="font-medium text-sm">{service.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            ID: {service.externalId} | Platform: {service.platform}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {showServiceDropdown && serviceSearch && filteredServices.length === 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg p-3">
-                    <div className="text-sm text-muted-foreground">Servis bulunamadı</div>
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                  {showServiceDropdown && serviceSearch && filteredServices.length === 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg p-3">
+                      <div className="text-sm text-muted-foreground">Servis bulunamadı</div>
+                    </div>
+                  )}
+                </div>
               
               <div>
                 <Label htmlFor="keyName">Key Adı</Label>
@@ -272,6 +315,49 @@ export default function KeyManagement() {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Key İndir</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="downloadKeyName">Key Adı</Label>
+                <Input
+                  id="downloadKeyName"
+                  value={downloadKeyName}
+                  onChange={(e) => setDownloadKeyName(e.target.value)}
+                  placeholder="İndirmek istediğiniz key adını girin..."
+                  className="w-full"
+                />
+                <p className="text-sm text-muted-foreground mt-2">
+                  Bu ada sahip tüm keyler CSV dosyası olarak indirilecek
+                </p>
+              </div>
+              
+              <Button 
+                onClick={() => {
+                  if (!downloadKeyName.trim()) {
+                    toast({
+                      title: "Hata",
+                      description: "Lütfen key adını girin",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  downloadKeysMutation.mutate(downloadKeyName.trim());
+                }}
+                disabled={downloadKeysMutation.isPending || !downloadKeyName.trim()}
+                className="btn-primary"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {downloadKeysMutation.isPending ? "İndiriliyor..." : "Keyleri İndir"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       </div>
       
       <Card>
