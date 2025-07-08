@@ -3,6 +3,22 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertApiSchema, insertServiceSchema, insertKeySchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
+import rateLimit from "express-rate-limit";
+import { body, validationResult } from "express-validator";
+import bcrypt from "bcryptjs";
+
+// Admin credentials with hashed password
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD_HASH = "$2b$10$rYc25.W8WPXfRyn2rNeMK.quvLbz.8UehyGWISBk9yZY79.1KyvUa"; // ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO
+
+// Rate limiting for admin login
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: "Too many login attempts, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 function generateRandomKey(prefix: string = "KIWIPAZARI"): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -571,13 +587,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  app.post("/api/orders", async (req, res) => {
+  app.post("/api/orders", [
+    body('keyValue').isLength({ min: 1, max: 100 }).trim().escape(),
+    body('serviceId').isInt({ min: 1 }),
+    body('link').isURL().isLength({ max: 500 }),
+    body('quantity').isInt({ min: 1, max: 1000000000 }),
+  ], async (req, res) => {
     try {
-      const { keyValue, link, quantity, serviceId } = req.body;
-      
-      if (!keyValue || !link || !quantity || !serviceId) {
-        return res.status(400).json({ message: "Tüm alanlar gerekli" });
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ message: "Geçersiz veri" });
       }
+
+      const { keyValue, link, quantity, serviceId } = req.body;
 
       // Validate key
       const key = await storage.getKeyByValue(keyValue);
@@ -704,7 +726,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Order Search Route (must be before parameterized route)
-  app.get("/api/orders/search", async (req, res) => {
+  app.get("/api/orders/search", [
+    body('orderId').optional().isLength({ min: 1, max: 50 }).trim().escape(),
+  ], async (req, res) => {
     try {
       const { orderId } = req.query;
       console.log(`🔍 Search request received for: "${orderId}"`);
@@ -713,7 +737,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Sipariş ID gerekli" });
       }
 
-      const searchId = orderId.toString();
+      // Sanitize input to prevent XSS
+      const searchId = orderId.toString().replace(/[<>\"'&]/g, '');
       console.log(`🔍 Sipariş aranıyor: "${searchId}"`);
       
       // If the search ID doesn't start with #, add it
@@ -869,6 +894,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Sipariş güncellenemedi" });
     }
   });
+
+  // Admin Login Route with security
+  app.post("/api/admin/login", 
+    adminLoginLimiter,
+    [
+      body('username').isLength({ min: 1 }).trim().escape(),
+      body('password').isLength({ min: 1 }),
+    ],
+    async (req, res) => {
+      try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          return res.status(400).json({ success: false, message: "Geçersiz giriş" });
+        }
+
+        const { username, password } = req.body;
+        
+        // Check username
+        if (username !== ADMIN_USERNAME) {
+          return res.status(401).json({ success: false, message: "Geçersiz kullanıcı adı veya şifre" });
+        }
+
+        // Check password with bcrypt
+        const passwordMatch = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+        if (!passwordMatch) {
+          return res.status(401).json({ success: false, message: "Geçersiz kullanıcı adı veya şifre" });
+        }
+
+        res.json({ success: true, message: "Admin oturum başarıyla açıldı" });
+      } catch (error) {
+        console.error("Admin login error:", error);
+        res.status(500).json({ success: false, message: "Sunucu hatası" });
+      }
+    }
+  );
 
   // Statistics Route
   app.get("/api/stats", async (req, res) => {

@@ -13,10 +13,7 @@ export default function AdminLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  // Admin şifresi - gerçek uygulamada bu backend'de olmalı
-  const ADMIN_PASSWORD = "admin123";
-
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!password.trim()) {
       toast({
         title: "Hata",
@@ -28,10 +25,21 @@ export default function AdminLogin() {
 
     setIsLoading(true);
 
-    // Basit şifre kontrolü - gerçek uygulamada backend'de yapılmalı
-    setTimeout(() => {
-      if (password === ADMIN_PASSWORD) {
-        // Başarılı giriş
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: "admin",
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         localStorage.setItem("admin_authenticated", "true");
         toast({
           title: "Başarılı",
@@ -41,12 +49,19 @@ export default function AdminLogin() {
       } else {
         toast({
           title: "Hata",
-          description: "Yanlış şifre",
+          description: data.message || "Yanlış şifre",
           variant: "destructive",
         });
       }
+    } catch (error) {
+      toast({
+        title: "Hata",
+        description: "Bağlantı hatası",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -97,7 +112,7 @@ export default function AdminLogin() {
 
             <div className="bg-muted/50 rounded-lg p-3 text-center">
               <p className="text-xs text-muted-foreground">
-                Demo şifre: <span className="font-mono">admin123</span>
+                Şifre: <span className="font-mono">ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO</span>
               </p>
             </div>
           </CardContent>

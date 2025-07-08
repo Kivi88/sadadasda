@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, X, Copy, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Search, X, Copy, Clock, CheckCircle, XCircle, Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useRealTimeOrder } from "@/hooks/use-real-time-order";
 import type { Order } from "@shared/schema";
 
 export default function OrderSearch() {
@@ -15,6 +16,26 @@ export default function OrderSearch() {
   const [showModal, setShowModal] = useState(false);
   
   const { toast } = useToast();
+
+  // Real-time order tracking
+  useRealTimeOrder(searchedOrder?.orderId || null, 5000);
+
+  // Query for real-time order data
+  const { data: realtimeOrder, isLoading: isRefreshing } = useQuery({
+    queryKey: ['order', searchedOrder?.orderId],
+    queryFn: async () => {
+      if (!searchedOrder?.orderId) return null;
+      const response = await fetch(`/api/orders/search?orderId=${encodeURIComponent(searchedOrder.orderId)}`);
+      if (!response.ok) throw new Error("Sipariş bulunamadı");
+      return response.json();
+    },
+    enabled: !!searchedOrder?.orderId && showModal,
+    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchIntervalInBackground: true,
+  });
+
+  // Use real-time data if available, otherwise use searched order
+  const displayOrder = realtimeOrder || searchedOrder;
 
   const searchOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
@@ -138,21 +159,29 @@ export default function OrderSearch() {
             </div>
           </DialogHeader>
           
-          {searchedOrder && (
+          {displayOrder && (
             <div className="space-y-4 pt-4">
-              {/* Order Status Header */}
+              {/* Order Status Header with Real-time indicator */}
               <div className="text-center p-4 bg-slate-700/50 rounded-lg">
-                <div className="text-2xl font-bold text-white mb-1">{searchedOrder.orderId}</div>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="text-2xl font-bold text-white">{displayOrder.orderId}</div>
+                  {isRefreshing && (
+                    <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
+                  )}
+                </div>
                 <div className={`text-sm px-3 py-1 rounded-full inline-block font-medium ${
-                  searchedOrder.status === 'completed' 
+                  displayOrder.status === 'completed' 
                     ? 'bg-green-600 text-white' 
-                    : searchedOrder.status === 'processing' 
+                    : displayOrder.status === 'processing' 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-orange-600 text-white'
                 }`}>
-                  {searchedOrder.status === 'completed' ? 'Tamamlandı' : 
-                   searchedOrder.status === 'processing' ? 'İşleniyor' : 
-                   searchedOrder.status === 'pending' ? 'Beklemede' : searchedOrder.status}
+                  {displayOrder.status === 'completed' ? 'Tamamlandı' : 
+                   displayOrder.status === 'processing' ? 'İşleniyor' : 
+                   displayOrder.status === 'pending' ? 'Beklemede' : displayOrder.status}
+                </div>
+                <div className="text-xs text-slate-400 mt-2">
+                  🔴 Canlı takip aktif • 5 saniyede bir güncellenir
                 </div>
               </div>
 
@@ -160,15 +189,19 @@ export default function OrderSearch() {
               <div className="bg-slate-700/30 rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-400">Miktar:</span>
-                  <span className="text-sm font-semibold text-white">{searchedOrder.quantity.toLocaleString()}</span>
+                  <span className="text-sm font-semibold text-white">{displayOrder.quantity.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-400">Link:</span>
-                  <span className="text-sm truncate max-w-[200px] text-blue-400">{searchedOrder.link}</span>
+                  <span className="text-sm truncate max-w-[200px] text-blue-400">{displayOrder.link}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-400">Oluşturulma:</span>
-                  <span className="text-sm text-white">{new Date(searchedOrder.createdAt).toLocaleString("tr-TR")}</span>
+                  <span className="text-sm text-white">{new Date(displayOrder.createdAt).toLocaleString("tr-TR")}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400">Son güncelleme:</span>
+                  <span className="text-sm text-white">{new Date(displayOrder.updatedAt).toLocaleString("tr-TR")}</span>
                 </div>
               </div>
             </div>
