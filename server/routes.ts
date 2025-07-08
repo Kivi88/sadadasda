@@ -118,24 +118,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "API bulunamadı" });
       }
 
-      // API URL'sini v1 olacak şekilde düzenle (medyabayim v1 kullanıyor)
-      let baseUrl = api.url;
-      if (baseUrl.includes('/v2')) {
-        baseUrl = baseUrl.replace('/v2', '/v1');
-      } else if (!baseUrl.includes('/v1')) {
-        // Eğer URL'de versiyon yoksa v1 ekle
-        baseUrl = baseUrl.replace(/\/+$/, '') + '/v1';
-      }
+      // API URL'sini normalize et
+      let baseUrl = api.url.replace(/\/+$/, ''); // Trailing slash'leri kaldır
       
-      // Farklı endpoint'leri dene
+      // Farklı endpoint'leri dene - medyabayim için özel durumlar
       const possibleEndpoints = [
+        `${baseUrl}`, // Ana endpoint
         `${baseUrl}/services`,
         `${baseUrl}/service`,
-        `${baseUrl}`,
-        `${api.url}/services`,
-        `${api.url}/service`,
-        `${api.url}` // Orijinal URL'i de dene
-      ];
+        // Versiyon değişiklikleri dene
+        `${baseUrl.replace('/v2', '/v1')}`,
+        `${baseUrl.replace('/v1', '/v2')}`,
+        `${baseUrl.replace('/v2', '/v1')}/services`,
+        `${baseUrl.replace('/v1', '/v2')}/services`,
+        // Eğer versiyon yoksa ekle
+        `${baseUrl}/v1`,
+        `${baseUrl}/v2`,
+        `${baseUrl}/v1/services`,
+        `${baseUrl}/v2/services`
+      ].filter((url, index, self) => self.indexOf(url) === index); // Duplicates'i kaldır
       
       let apiResponse = null;
       let lastError = null;
@@ -144,58 +145,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`Denenen endpoint: ${endpoint}`);
           
-          // Önce POST dene
-          apiResponse = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "User-Agent": "KiwiPazari/1.0"
+          // Farklı request formatlarını dene
+          const requestFormats = [
+            // POST ile action parametresi
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "User-Agent": "KiwiPazari/1.0" },
+              body: JSON.stringify({ key: api.key, action: "services" })
             },
-            body: JSON.stringify({
-              key: api.key,
-              action: "services"
-            })
-          });
-          
-          if (apiResponse.ok) {
-            console.log(`Başarılı endpoint (POST): ${endpoint}`);
-            break;
-          } else {
-            console.log(`Başarısız endpoint (POST): ${endpoint} - ${apiResponse.status}`);
-            
-            // POST başarısızsa GET dene
-            const getResponse = await fetch(`${endpoint}?key=${api.key}&action=services`, {
+            // POST sadece key ile
+            {
+              method: "POST", 
+              headers: { "Content-Type": "application/json", "User-Agent": "KiwiPazari/1.0" },
+              body: JSON.stringify({ key: api.key })
+            },
+            // GET ile query parametreleri
+            {
               method: "GET",
-              headers: {
-                "User-Agent": "KiwiPazari/1.0"
-              }
-            });
+              headers: { "User-Agent": "KiwiPazari/1.0" },
+              url: `${endpoint}?key=${api.key}&action=services`
+            },
+            // GET sadece key ile
+            {
+              method: "GET",
+              headers: { "User-Agent": "KiwiPazari/1.0" },
+              url: `${endpoint}?key=${api.key}`
+            }
+          ];
+          
+          for (const format of requestFormats) {
+            const requestUrl = format.url || endpoint;
+            const requestOptions = {
+              method: format.method,
+              headers: format.headers,
+              ...(format.body && { body: format.body })
+            };
             
-            if (getResponse.ok) {
-              console.log(`Başarılı endpoint (GET): ${endpoint}`);
-              apiResponse = getResponse;
-              break;
-            } else {
-              console.log(`Başarısız endpoint (GET): ${endpoint} - ${getResponse.status}`);
+            try {
+              const response = await fetch(requestUrl, requestOptions);
+              console.log(`${format.method} ${requestUrl} - ${response.status}`);
               
-              // Farklı parametre formatını dene
-              const altResponse = await fetch(`${endpoint}?key=${api.key}`, {
-                method: "GET",
-                headers: {
-                  "User-Agent": "KiwiPazari/1.0"
+              if (response.ok) {
+                const text = await response.text();
+                console.log(`Başarılı! Response uzunluk: ${text.length} karakter`);
+                
+                try {
+                  // JSON parse dene
+                  const data = JSON.parse(text);
+                  apiResponse = response;
+                  // Response'u tekrar kullanabilmek için mock response object oluştur
+                  apiResponse.json = () => Promise.resolve(data);
+                  console.log(`Başarılı endpoint: ${requestUrl} (${format.method})`);
+                  break;
+                } catch (parseError) {
+                  console.log(`JSON parse hatası: ${parseError.message}`);
+                  continue;
                 }
-              });
-              
-              if (altResponse.ok) {
-                console.log(`Başarılı endpoint (ALT GET): ${endpoint}`);
-                apiResponse = altResponse;
-                break;
-              } else {
-                console.log(`Başarısız endpoint (ALT GET): ${endpoint} - ${altResponse.status}`);
-                lastError = new Error(`${apiResponse.status} ${apiResponse.statusText}`);
               }
+            } catch (fetchError) {
+              console.log(`Fetch hata: ${fetchError.message}`);
+              continue;
             }
           }
+          
+          if (apiResponse && apiResponse.ok) {
+            break;
+          }
+          
         } catch (error) {
           console.log(`Hata endpoint: ${endpoint} - ${error.message}`);
           lastError = error;
@@ -203,85 +219,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!apiResponse || !apiResponse.ok) {
-        // Eğer gerçek API'den veri çekilemiyorsa mock servisleri oluştur
-        console.log("Gerçek API'den veri çekilemiyor, mock servisleri oluşturuluyor...");
-        
-        const mockServices = [
-          {
-            service: "1001",
-            name: "Instagram Takipçi",
-            type: "Default",
-            rate: "0.50",
-            min: "100",
-            max: "10000",
-            platform: "Instagram",
-            category: "Takipçi"
-          },
-          {
-            service: "1002", 
-            name: "Instagram Beğeni",
-            type: "Default",
-            rate: "0.25",
-            min: "50",
-            max: "5000",
-            platform: "Instagram",
-            category: "Beğeni"
-          },
-          {
-            service: "1003",
-            name: "TikTok Takipçi",
-            type: "Default", 
-            rate: "0.75",
-            min: "100",
-            max: "8000",
-            platform: "TikTok",
-            category: "Takipçi"
-          },
-          {
-            service: "1004",
-            name: "YouTube İzlenme",
-            type: "Default",
-            rate: "0.30",
-            min: "1000",
-            max: "100000",
-            platform: "YouTube",
-            category: "İzlenme"
-          },
-          {
-            service: "1005",
-            name: "Telegram Üye",
-            type: "Default",
-            rate: "0.40",
-            min: "50",
-            max: "2000",
-            platform: "Telegram",
-            category: "Üye"
-          }
-        ];
-        
-        let addedCount = 0;
-        const existingServices = await storage.getServicesByApi(id);
-        
-        for (const serviceData of mockServices) {
-          const serviceId = serviceData.service;
-          const exists = existingServices.find(s => s.externalId === serviceId);
-          
-          if (!exists) {
-            await storage.createService({
-              apiId: id,
-              externalId: serviceId,
-              name: serviceData.name,
-              platform: serviceData.platform,
-              category: serviceData.category,
-              minQuantity: parseInt(serviceData.min),
-              maxQuantity: parseInt(serviceData.max),
-              isActive: true
-            });
-            addedCount++;
-          }
-        }
-        
-        return res.json({ addedCount, message: "Mock servisler eklendi" });
+        console.log("Gerçek API'den veri çekilemiyor. Hata:", lastError?.message || "Bilinmeyen hata");
+        return res.status(500).json({ 
+          message: "API'den servis verisi alınamadı. Lütfen API URL'sini ve anahtarını kontrol edin.",
+          error: lastError?.message || "Bilinmeyen hata",
+          addedCount: 0
+        });
       }
 
       const servicesData = await apiResponse.json();
