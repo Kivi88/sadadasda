@@ -142,8 +142,25 @@ export class DatabaseStorage implements IStorage {
   async getOrderByOrderId(orderId: string): Promise<Order | undefined> {
     console.log(`🔍 Storage: Searching for order with ID: "${orderId}"`);
     
-    // Try to find the order
-    const result = await db.select().from(orders).where(eq(orders.orderId, orderId));
+    // Try to find the order with service and API information
+    const result = await db
+      .select({
+        id: orders.id,
+        orderId: orders.orderId,
+        keyId: orders.keyId,
+        serviceId: orders.serviceId,
+        link: orders.link,
+        quantity: orders.quantity,
+        status: orders.status,
+        externalOrderId: orders.externalOrderId,
+        createdAt: orders.createdAt,
+        updatedAt: orders.updatedAt,
+        service: services
+      })
+      .from(orders)
+      .leftJoin(services, eq(orders.serviceId, services.id))
+      .where(eq(orders.orderId, orderId));
+    
     console.log(`🔍 Storage: Query result:`, result);
     
     const order = result[0];

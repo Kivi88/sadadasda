@@ -17,6 +17,39 @@ function generateOrderId(): string {
   return "#" + Math.floor(1000000 + Math.random() * 9000000).toString();
 }
 
+async function checkOrderStatus(order: any, api: any) {
+  console.log(`📡 Checking real-time status for order ${order.orderId} (External ID: ${order.externalOrderId})`);
+  console.log(`📡 API URL: ${api.url}, API Key: ${api.apiKey ? 'Present' : 'Missing'}`);
+  
+  const statusUrl = `${api.url}?action=status&key=${api.apiKey}&order=${order.externalOrderId}`;
+  console.log(`📡 Status URL: ${statusUrl}`);
+  
+  const statusResponse = await fetch(statusUrl);
+  console.log(`📡 Status Response Status: ${statusResponse.status}`);
+  
+  if (statusResponse.ok) {
+    const statusData = await statusResponse.json();
+    console.log(`📊 Status response:`, statusData);
+    
+    // Map external status to our internal status
+    let newStatus = order.status;
+    if (statusData.status === "Completed" || statusData.status === "completed" || statusData.status === "Complete") {
+      newStatus = "completed";
+    } else if (statusData.status === "In progress" || statusData.status === "Processing" || statusData.status === "processing") {
+      newStatus = "processing";
+    } else if (statusData.status === "Pending" || statusData.status === "pending" || statusData.status === "Waiting") {
+      newStatus = "pending";
+    } else if (statusData.status === "Cancelled" || statusData.status === "cancelled" || statusData.status === "Canceled") {
+      newStatus = "cancelled";
+    }
+    
+    return newStatus;
+  } else {
+    console.log(`❌ Status check failed: ${statusResponse.status} ${statusResponse.statusText}`);
+    return order.status;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // API Management Routes
   app.get("/api/apis", async (req, res) => {
@@ -700,8 +733,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const api = await storage.getApi(order.service.apiId);
           if (api && api.isActive) {
             console.log(`📡 Checking real-time status for order ${order.orderId} (External ID: ${order.externalOrderId})`);
+            console.log(`📡 API URL: ${api.url}, API Key: ${api.apiKey ? 'Present' : 'Missing'}`);
             
-            const statusResponse = await fetch(`${api.baseUrl}/status?key=${api.apiKey}&order=${order.externalOrderId}`);
+            const statusUrl = `${api.url}?action=status&key=${api.apiKey}&order=${order.externalOrderId}`;
+            console.log(`📡 Status URL: ${statusUrl}`);
+            
+            const statusResponse = await fetch(statusUrl);
+            console.log(`📡 Status Response Status: ${statusResponse.status}`);
             
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
@@ -724,13 +762,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`🔄 Status updated from ${order.status} to ${newStatus}`);
                 await storage.updateOrder(order.id, { status: newStatus });
                 order.status = newStatus;
+              } else {
+                console.log(`✅ Status unchanged: ${order.status}`);
               }
+            } else {
+              console.log(`❌ Status check failed: ${statusResponse.status} ${statusResponse.statusText}`);
             }
+          } else {
+            console.log(`❌ API not found or inactive for service ${order.service.apiId}`);
           }
         } catch (statusError) {
           console.error("Error checking real-time status:", statusError);
           // Continue without failing the request
         }
+      } else {
+        console.log(`❌ No external order ID or service info for order ${order.orderId}`);
       }
 
       console.log(`✅ Sipariş bulundu: ${order.orderId}`);
@@ -757,8 +803,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const api = await storage.getApi(order.service.apiId);
           if (api && api.isActive) {
             console.log(`📡 Checking real-time status for order ${order.orderId} (External ID: ${order.externalOrderId})`);
+            console.log(`📡 API URL: ${api.url}, API Key: ${api.apiKey ? 'Present' : 'Missing'}`);
             
-            const statusResponse = await fetch(`${api.baseUrl}/status?key=${api.apiKey}&order=${order.externalOrderId}`);
+            const statusUrl = `${api.url}?action=status&key=${api.apiKey}&order=${order.externalOrderId}`;
+            console.log(`📡 Status URL: ${statusUrl}`);
+            
+            const statusResponse = await fetch(statusUrl);
+            console.log(`📡 Status Response Status: ${statusResponse.status}`);
             
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
@@ -781,13 +832,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`🔄 Status updated from ${order.status} to ${newStatus}`);
                 await storage.updateOrder(order.id, { status: newStatus });
                 order.status = newStatus;
+              } else {
+                console.log(`✅ Status unchanged: ${order.status}`);
               }
+            } else {
+              console.log(`❌ Status check failed: ${statusResponse.status} ${statusResponse.statusText}`);
             }
+          } else {
+            console.log(`❌ API not found or inactive for service ${order.service.apiId}`);
           }
         } catch (statusError) {
           console.error("Error checking real-time status:", statusError);
           // Continue without failing the request
         }
+      } else {
+        console.log(`❌ No external order ID or service info for order ${order.orderId}`);
       }
 
       res.json(order);
