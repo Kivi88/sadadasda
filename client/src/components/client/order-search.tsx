@@ -18,9 +18,7 @@ export default function OrderSearch() {
 
   const searchOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
-      // Remove # prefix if present for the API call
-      const cleanOrderId = orderId.startsWith('#') ? orderId.substring(1) : orderId;
-      const response = await fetch(`/api/orders/${cleanOrderId}`);
+      const response = await fetch(`/api/orders/search?orderId=${encodeURIComponent(orderId)}`);
       if (!response.ok) {
         throw new Error("Sipariş bulunamadı");
       }
