@@ -112,7 +112,7 @@ export default function AdminLogin() {
 
             <div className="bg-muted/50 rounded-lg p-3 text-center">
               <p className="text-xs text-muted-foreground">
-                Şifre: <span className="font-mono">ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO</span>
+                 <span className="font-mono"></span>
               </p>
             </div>
           </CardContent>
