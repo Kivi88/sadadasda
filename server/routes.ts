@@ -197,7 +197,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rate: "0.50",
             min: "100",
             max: "10000",
-            category: "Instagram"
+            platform: "Instagram",
+            category: "Takipçi"
           },
           {
             service: "1002", 
@@ -206,7 +207,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rate: "0.25",
             min: "50",
             max: "5000",
-            category: "Instagram"
+            platform: "Instagram",
+            category: "Beğeni"
           },
           {
             service: "1003",
@@ -215,7 +217,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rate: "0.75",
             min: "100",
             max: "8000",
-            category: "TikTok"
+            platform: "TikTok",
+            category: "Takipçi"
           },
           {
             service: "1004",
@@ -224,7 +227,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rate: "0.30",
             min: "1000",
             max: "100000",
-            category: "YouTube"
+            platform: "YouTube",
+            category: "İzlenme"
           },
           {
             service: "1005",
@@ -233,7 +237,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rate: "0.40",
             min: "50",
             max: "2000",
-            category: "Telegram"
+            platform: "Telegram",
+            category: "Üye"
           }
         ];
         
@@ -249,11 +254,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               apiId: id,
               externalId: serviceId,
               name: serviceData.name,
-              platform: serviceData.category,
-              price: parseFloat(serviceData.rate),
+              platform: serviceData.platform,
+              category: serviceData.category,
               minQuantity: parseInt(serviceData.min),
               maxQuantity: parseInt(serviceData.max),
-              description: `${serviceData.name} - ${serviceData.category} platformu için`,
               isActive: true
             });
             addedCount++;
