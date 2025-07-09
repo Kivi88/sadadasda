@@ -230,39 +230,192 @@ $csrf_token = generateCSRFToken();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KiWiPazari - Ana Sayfa</title>
+    <title>KIWIPAZARI</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #1a1a1a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .container { max-width: 500px; width: 100%; padding: 2rem; }
-        .header { text-align: center; margin-bottom: 2rem; }
-        .header h1 { font-size: 2.5rem; color: #4a9eff; margin-bottom: 0.5rem; }
-        .header p { color: #ccc; font-size: 1.1rem; }
-        .card { background: #2a2a2a; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 1rem; }
-        .form-group { margin-bottom: 1.5rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: bold; color: #ddd; }
-        input { width: 100%; padding: 0.75rem; border: 1px solid #555; border-radius: 6px; background: #3a3a3a; color: #fff; font-size: 1rem; }
-        input:focus { outline: none; border-color: #4a9eff; }
-        .btn { width: 100%; padding: 0.75rem; background: #4a9eff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold; transition: all 0.3s; }
-        .btn:hover { background: #357abd; transform: translateY(-1px); }
-        .btn:disabled { background: #666; cursor: not-allowed; transform: none; }
-        .error { color: #ff4444; margin-top: 0.5rem; font-size: 0.9rem; }
-        .success { color: #44ff44; margin-top: 0.5rem; font-size: 0.9rem; }
-        .info { background: #333; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid #4a9eff; }
-        .hidden { display: none; }
-        .order-form { margin-top: 2rem; }
-        .order-search { margin-top: 2rem; }
-        .order-result { margin-top: 1rem; padding: 1rem; background: #333; border-radius: 6px; }
-        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.9rem; font-weight: bold; }
-        .status-pending { background: #f59e0b; color: #000; }
-        .status-processing { background: #3b82f6; color: #fff; }
-        .status-completed { background: #10b981; color: #fff; }
-        .status-error { background: #ef4444; color: #fff; }
-        .nav-links { text-align: center; margin-top: 2rem; }
-        .nav-links a { color: #4a9eff; text-decoration: none; margin: 0 1rem; }
-        .nav-links a:hover { text-decoration: underline; }
-        .loader { border: 2px solid #333; border-top: 2px solid #4a9eff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; margin-left: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #1e2837 0%, #2d3748 100%); 
+            color: #fff; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            padding: 2rem;
+        }
+        .container { 
+            width: 100%; 
+            max-width: 400px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 2rem; 
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 1rem; 
+        }
+        .header h1 { 
+            font-size: 2.5rem; 
+            color: #4A90E2; 
+            font-weight: 700; 
+            letter-spacing: 1px; 
+            margin-bottom: 0.5rem; 
+        }
+        .header p { 
+            color: #A0AEC0; 
+            font-size: 1rem; 
+            font-weight: 400; 
+        }
+        .card { 
+            background: rgba(45, 55, 72, 0.8); 
+            border-radius: 16px; 
+            padding: 2rem; 
+            border: 1px solid rgba(74, 144, 226, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        .form-section { 
+            margin-bottom: 1.5rem; 
+        }
+        .form-section h3 { 
+            color: #E2E8F0; 
+            font-size: 1.1rem; 
+            margin-bottom: 1rem; 
+            font-weight: 600; 
+        }
+        .form-group { 
+            margin-bottom: 1rem; 
+        }
+        .form-group label { 
+            display: block; 
+            margin-bottom: 0.5rem; 
+            color: #CBD5E0; 
+            font-weight: 500; 
+            font-size: 0.9rem; 
+        }
+        .form-group input { 
+            width: 100%; 
+            padding: 0.875rem; 
+            border: 1px solid rgba(74, 144, 226, 0.3); 
+            border-radius: 8px; 
+            background: rgba(26, 32, 44, 0.6); 
+            color: #fff; 
+            font-size: 1rem; 
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus { 
+            outline: none; 
+            border-color: #4A90E2; 
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        .form-group input::placeholder { 
+            color: #718096; 
+        }
+        .btn { 
+            width: 100%; 
+            padding: 0.875rem; 
+            background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 1rem; 
+            font-weight: 600; 
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 25px rgba(74, 144, 226, 0.3);
+        }
+        .btn:disabled { 
+            background: #4A5568; 
+            cursor: not-allowed; 
+            transform: none; 
+            box-shadow: none;
+        }
+        .error { 
+            color: #F56565; 
+            margin-top: 0.5rem; 
+            font-size: 0.875rem; 
+            font-weight: 500;
+        }
+        .success { 
+            color: #48BB78; 
+            margin-top: 0.5rem; 
+            font-size: 0.875rem; 
+            font-weight: 500;
+        }
+        .info { 
+            background: rgba(74, 144, 226, 0.1); 
+            padding: 1rem; 
+            border-radius: 8px; 
+            margin-bottom: 1rem; 
+            border-left: 4px solid #4A90E2; 
+            color: #E2E8F0;
+            font-size: 0.9rem;
+        }
+        .hidden { 
+            display: none; 
+        }
+        .order-result { 
+            margin-top: 1rem; 
+            padding: 1rem; 
+            background: rgba(26, 32, 44, 0.6); 
+            border-radius: 8px; 
+            border: 1px solid rgba(74, 144, 226, 0.2);
+        }
+        .status-badge { 
+            display: inline-block; 
+            padding: 0.25rem 0.75rem; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-pending { background: rgba(237, 137, 54, 0.2); color: #ED8936; border: 1px solid rgba(237, 137, 54, 0.3); }
+        .status-processing { background: rgba(66, 153, 225, 0.2); color: #4299E1; border: 1px solid rgba(66, 153, 225, 0.3); }
+        .status-completed { background: rgba(72, 187, 120, 0.2); color: #48BB78; border: 1px solid rgba(72, 187, 120, 0.3); }
+        .status-error { background: rgba(245, 101, 101, 0.2); color: #F56565; border: 1px solid rgba(245, 101, 101, 0.3); }
+        .nav-links { 
+            text-align: center; 
+            margin-top: 2rem; 
+        }
+        .nav-links a { 
+            color: #4A90E2; 
+            text-decoration: none; 
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+        .nav-links a:hover { 
+            color: #63B3ED; 
+            text-decoration: underline; 
+        }
+        .loader { 
+            border: 2px solid rgba(255, 255, 255, 0.3); 
+            border-top: 2px solid #fff; 
+            border-radius: 50%; 
+            width: 16px; 
+            height: 16px; 
+            animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .container { max-width: 350px; padding: 1rem; }
+            .card { padding: 1.5rem; }
+            .header h1 { font-size: 2rem; }
+        }
     </style>
 </head>
 <body>
@@ -273,56 +426,59 @@ $csrf_token = generateCSRFToken();
         </div>
         
         <div class="card">
-            <form id="keyValidationForm">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                <div class="form-group">
-                    <label for="key_value">Ürün Anahtarı</label>
-                    <input type="text" id="key_value" name="key_value" placeholder="Ürün anahtarınızı girin" required>
-                    <div id="keyError" class="error hidden"></div>
-                </div>
-                <button type="submit" class="btn" id="validateBtn">
-                    Doğrula
-                    <span id="validateLoader" class="loader hidden"></span>
-                </button>
-            </form>
-        </div>
-        
-        <div id="orderForm" class="card hidden">
-            <h3>Sipariş Oluştur</h3>
-            <div id="serviceInfo" class="info"></div>
-            <form id="createOrderForm">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                <input type="hidden" id="validated_key" name="key_value">
-                <div class="form-group">
-                    <label for="quantity">Miktar</label>
-                    <input type="number" id="quantity" name="quantity" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label for="link">Link</label>
-                    <input type="url" id="link" name="link" placeholder="https://example.com" required>
-                </div>
-                <button type="submit" class="btn" id="orderBtn">
-                    Sipariş Oluştur
-                    <span id="orderLoader" class="loader hidden"></span>
-                </button>
-                <div id="orderError" class="error hidden"></div>
-                <div id="orderSuccess" class="success hidden"></div>
-            </form>
+            <div class="form-section">
+                <h3>Ürün Anahtarı</h3>
+                <form id="keyValidationForm">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <div class="form-group">
+                        <input type="text" id="key_value" name="key_value" placeholder="Ürün anahtarınızı girin" required>
+                        <div id="keyError" class="error hidden"></div>
+                    </div>
+                    <button type="submit" class="btn" id="validateBtn">
+                        <span id="validateLoader" class="loader hidden"></span>
+                        Doğrula
+                    </button>
+                </form>
+            </div>
+            
+            <div id="orderForm" class="form-section hidden">
+                <div id="serviceInfo" class="info"></div>
+                <form id="createOrderForm">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                    <input type="hidden" id="validated_key" name="key_value">
+                    <div class="form-group">
+                        <label for="quantity">Miktar</label>
+                        <input type="number" id="quantity" name="quantity" min="1" placeholder="Miktar girin" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="link">Link</label>
+                        <input type="url" id="link" name="link" placeholder="https://example.com" required>
+                    </div>
+                    <button type="submit" class="btn" id="orderBtn">
+                        <span id="orderLoader" class="loader hidden"></span>
+                        Sipariş Oluştur
+                    </button>
+                    <div id="orderError" class="error hidden"></div>
+                    <div id="orderSuccess" class="success hidden"></div>
+                </form>
+            </div>
         </div>
         
         <div class="card">
-            <h3>Sipariş Sorgula</h3>
-            <form id="orderSearchForm">
-                <div class="form-group">
-                    <label for="search_order_id">Sipariş ID</label>
-                    <input type="text" id="search_order_id" name="order_id" placeholder="#2384344 veya 2384344" required>
-                </div>
-                <button type="submit" class="btn" id="searchBtn">
-                    Sorgula
-                    <span id="searchLoader" class="loader hidden"></span>
-                </button>
-            </form>
-            <div id="searchResult" class="order-result hidden"></div>
+            <div class="form-section">
+                <h3>Sipariş Sorgula</h3>
+                <form id="orderSearchForm">
+                    <div class="form-group">
+                        <label for="search_order_id">Sipariş ID</label>
+                        <input type="text" id="search_order_id" name="order_id" placeholder="#2384344 veya 2384344" required>
+                    </div>
+                    <button type="submit" class="btn" id="searchBtn">
+                        <span id="searchLoader" class="loader hidden"></span>
+                        Sorgula
+                    </button>
+                </form>
+                <div id="searchResult" class="order-result hidden"></div>
+            </div>
         </div>
         
         <div class="nav-links">
