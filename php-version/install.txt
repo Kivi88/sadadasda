@@ -1,0 +1,77 @@
+KiWiPazari - PHP/MySQL Sürümü Kurulum Rehberi
+==================================================
+
+Bu dosya, KiWiPazari sisteminin cPanel hosting ortamına kurulumu için adım adım rehber içerir.
+
+1. DOSYA YÜKLEME
+================
+- Tüm dosyaları public_html klasörüne yükleyin
+- Zip dosyasını cPanel File Manager ile açabilirsiniz
+- Dosya yapısı:
+  /public_html/
+  ├── index.php (Ana sayfa)
+  ├── admin-login.php (Admin girişi)
+  ├── admin.php (Admin paneli)
+  ├── setup.php (Kurulum scripti)
+  ├── config.php (Konfigürasyon)
+  ├── .htaccess (URL yönlendirme)
+  └── api/ (API dosyaları)
+
+2. VERİTABANI KURULUMU
+======================
+a) cPanel'de MySQL Database bölümüne gidin
+b) Yeni veritabanı oluşturun (örnek: username_kiwipazari)
+c) Veritabanı kullanıcısı oluşturun
+d) Kullanıcıya tüm yetkileri verin
+e) setup.php dosyasını çalıştırın: https://yourdomain.com/setup.php
+
+3. KONFİGÜRASYON
+================
+config.php dosyasını düzenleyin:
+
+define('DB_HOST', 'localhost');
+define('DB_USER', 'your_db_user');        // Veritabanı kullanıcı adı
+define('DB_PASS', 'your_db_password');    // Veritabanı şifresi
+define('DB_NAME', 'your_db_name');        // Veritabanı adı
+
+4. GÜVENLİK AYARLARI
+====================
+- Admin şifresini değiştirin (varsayılan çok güçlü)
+- .htaccess dosyasının yüklendiğini kontrol edin
+- Dosya izinlerini kontrol edin:
+  - config.php: 644
+  - api/ klasörü: 755
+  - Diğer PHP dosyaları: 644
+
+5. TEST ETME
+============
+a) Ana sayfa: https://yourdomain.com
+b) Admin paneli: https://yourdomain.com/kiwi-management-portal
+   - Kullanıcı: admin
+   - Şifre: ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO
+
+6. İLK KURULUM ADIMLARI
+=======================
+1. Admin paneline giriş yapın
+2. API Management sekmesine gidin
+3. Dış API'nizi ekleyin
+4. Services sekmesinden servisleri senkronize edin
+5. Keys sekmesinden anahtarlar oluşturun
+6. Test için ana sayfadan anahtar doğrulama yapın
+
+7. SORUN GİDERME
+================
+- 500 Error: Dosya izinlerini kontrol edin
+- Database Error: config.php'deki bilgileri kontrol edin
+- API çalışmıyor: .htaccess dosyasını kontrol edin
+- Admin paneline erişim yok: URL'yi kontrol edin
+
+8. BACKUP ALMA
+==============
+Düzenli olarak:
+- Veritabanını export edin
+- Dosyaları yedekleyin
+- config.php dosyasını güvenli tutun
+
+KURULUM TAMAMLANDI!
+Artık sisteminiz kullanıma hazır.
