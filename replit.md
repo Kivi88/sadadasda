@@ -248,9 +248,10 @@ npm run dev      # Start development server
   - Enhanced security by making admin access path less discoverable
   - User requested: "hani /admin yazınca admin şifre girin e atıyorya url yi gizlesek"
 - July 08, 2025. **Service Name Privacy Enhancement**:
-  - Removed detailed service name display from key validation page
+  - Removed detailed service name display from key validation page and all client interfaces
+  - Updated key-validator.tsx, order-form.tsx, and home.tsx components
   - Now shows only platform and category instead of full service description
-  - Enhanced user privacy by hiding specific service details
+  - Enhanced user privacy by completely hiding specific service details
   - User requested: "servis adı gözükmesin"
 
 ## User Preferences

@@ -186,7 +186,6 @@ export default function Home() {
               {validatedKey && service && (
                 <div className="space-y-4">
                   <div className="bg-gray-800 p-4 rounded-lg">
-                    <h3 className="text-white font-medium mb-2">{service.name}</h3>
                     <p className="text-gray-400 text-sm mb-2">
                       Platform: {service.platform} | Kategori: {service.category}
                     </p>

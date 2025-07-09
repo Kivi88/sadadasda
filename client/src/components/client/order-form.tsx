@@ -111,7 +111,7 @@ export default function OrderForm({ keyValue, service, quantity, link, onOrderCr
       <CardHeader className="text-center">
         <CardTitle>Sipariş Oluştur</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Servis: {service.name}
+          Platform: {service.platform} | Kategori: {service.category}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
