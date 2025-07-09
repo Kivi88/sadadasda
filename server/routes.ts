@@ -9,7 +9,7 @@ import bcrypt from "bcryptjs";
 
 // Admin credentials with hashed password
 const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD_HASH = "$2b$10$rYc25.W8WPXfRyn2rNeMK.quvLbz.8UehyGWISBk9yZY79.1KyvUa"; // ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO
+const ADMIN_PASSWORD_HASH = "$2b$10$CFaikefjVPTmhU.hIVDDHOTqC9YTj5na/rj5Y1iw4oz68PYOM7FvW"; // admin123
 
 // Rate limiting for admin login
 const adminLoginLimiter = rateLimit({
