@@ -45,7 +45,7 @@ export default function AdminLogin() {
           title: "Başarılı",
           description: "Admin paneline hoş geldiniz",
         });
-        setLocation("/admin/dashboard");
+        setLocation("/kiwi-management-portal/dashboard");
       } else {
         toast({
           title: "Hata",

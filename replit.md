@@ -242,6 +242,11 @@ npm run dev      # Start development server
   - TXT files now contain only key values (one per line) for simpler processing
   - Updated backend response headers and frontend download filename
   - User requested: "şimdi key indir csv olarak değilde txt olarak versin"
+- July 08, 2025. **Admin URL Security Enhancement**:
+  - Changed admin panel URL from obvious "/admin" to hidden "/kiwi-management-portal"
+  - Updated all admin routing and redirects to use new secure path
+  - Enhanced security by making admin access path less discoverable
+  - User requested: "hani /admin yazınca admin şifre girin e atıyorya url yi gizlesek"
 
 ## User Preferences
 

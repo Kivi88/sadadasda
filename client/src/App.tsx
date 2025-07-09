@@ -14,8 +14,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/client" component={ClientPanel} />
-      <Route path="/admin" component={AdminLogin} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/kiwi-management-portal" component={AdminLogin} />
+      <Route path="/kiwi-management-portal/dashboard" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

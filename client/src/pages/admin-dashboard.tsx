@@ -35,7 +35,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("admin_authenticated");
     if (!isAuthenticated) {
-      setLocation("/admin");
+      setLocation("/kiwi-management-portal");
     }
   }, [setLocation]);
 
@@ -45,7 +45,7 @@ export default function AdminDashboard() {
       title: "Çıkış yapıldı",
       description: "Admin panelinden çıkış yaptınız",
     });
-    setLocation("/admin");
+    setLocation("/kiwi-management-portal");
   };
 
   const { data: stats, isLoading: statsLoading } = useQuery({
