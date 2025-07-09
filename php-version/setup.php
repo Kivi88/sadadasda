@@ -4,26 +4,31 @@
  * Bu script MySQL veritabanını kurur ve gerekli tabloları oluşturur
  */
 
-// Veritabanı bağlantı ayarları
+// cPanel veritabanı bilgilerini buraya girin
 $host = 'localhost';
-$username = 'root';
-$password = '';
-$database = 'kiwipazari';
+$username = 'smmkiwic_user';  // cPanel kullanıcı adınızı girin
+$password = 'YOUR_DB_PASSWORD';  // Veritabanı şifrenizi girin
+$database = 'smmkiwic_kiwipazari';  // Veritabanı adınızı girin
+
+echo "<h2>KiWiPazari Kurulum</h2>";
+echo "<p>Veritabanı bağlantısı test ediliyor...</p>";
 
 // Veritabanı bağlantısı
 $conn = new mysqli($host, $username, $password);
 
 // Bağlantıyı kontrol et
 if ($conn->connect_error) {
-    die("Veritabanı bağlantısı başarısız: " . $conn->connect_error);
+    die("<div style='color: red;'>❌ Veritabanı bağlantısı başarısız: " . $conn->connect_error . "</div>");
 }
+
+echo "<p style='color: green;'>✅ Veritabanı bağlantısı başarılı!</p>";
 
 // Veritabanını oluştur
 $sql = "CREATE DATABASE IF NOT EXISTS $database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 if ($conn->query($sql) === TRUE) {
-    echo "Veritabanı başarıyla oluşturuldu veya zaten mevcut.<br>";
+    echo "<p style='color: green;'>✅ Veritabanı başarıyla oluşturuldu veya zaten mevcut.</p>";
 } else {
-    echo "Veritabanı oluşturulurken hata: " . $conn->error . "<br>";
+    echo "<p style='color: red;'>❌ Veritabanı oluşturulurken hata: " . $conn->error . "</p>";
 }
 
 // Veritabanını seç
@@ -92,9 +97,9 @@ $tables = [
 
 foreach ($tables as $table => $sql) {
     if ($conn->query($sql) === TRUE) {
-        echo "Tablo '$table' başarıyla oluşturuldu.<br>";
+        echo "<p style='color: green;'>✅ Tablo '$table' başarıyla oluşturuldu.</p>";
     } else {
-        echo "Tablo '$table' oluşturulurken hata: " . $conn->error . "<br>";
+        echo "<p style='color: red;'>❌ Tablo '$table' oluşturulurken hata: " . $conn->error . "</p>";
     }
 }
 
@@ -108,17 +113,26 @@ $admin_sql = "CREATE TABLE IF NOT EXISTS admin_users (
 )";
 
 if ($conn->query($admin_sql) === TRUE) {
-    echo "Admin kullanıcı tablosu oluşturuldu.<br>";
+    echo "<p style='color: green;'>✅ Admin kullanıcı tablosu oluşturuldu.</p>";
     
     // Varsayılan admin kullanıcısı ekle
     $insert_admin = "INSERT IGNORE INTO admin_users (username, password) VALUES ('admin', '$admin_password')";
     if ($conn->query($insert_admin) === TRUE) {
-        echo "Varsayılan admin kullanıcısı oluşturuldu.<br>";
+        echo "<p style='color: green;'>✅ Varsayılan admin kullanıcısı oluşturuldu.</p>";
     }
 }
 
 $conn->close();
-echo "<br><strong>Kurulum tamamlandı!</strong><br>";
-echo "Admin giriş: <a href='admin.php'>admin.php</a><br>";
-echo "Ana sayfa: <a href='index.php'>index.php</a>";
+echo "<div style='background: #d4edda; padding: 20px; border: 1px solid #c3e6cb; border-radius: 5px; margin-top: 20px;'>";
+echo "<h3 style='color: #155724; margin-top: 0;'>🎉 Kurulum Tamamlandı!</h3>";
+echo "<p><strong>Admin Paneli:</strong> <a href='/kiwi-management-portal' style='color: #007bff;'>Yönetim Paneli</a></p>";
+echo "<p><strong>Ana Sayfa:</strong> <a href='index.php' style='color: #007bff;'>Ana Sayfa</a></p>";
+echo "<p><strong>Admin Kullanıcı Adı:</strong> admin</p>";
+echo "<p><strong>Admin Şifre:</strong> ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO</p>";
+echo "</div>";
+
+echo "<div style='background: #fff3cd; padding: 20px; border: 1px solid #ffeaa7; border-radius: 5px; margin-top: 20px;'>";
+echo "<h4 style='color: #856404; margin-top: 0;'>⚠️ Önemli Güvenlik Uyarısı:</h4>";
+echo "<p>Kurulum tamamlandıktan sonra <strong>setup.php</strong> dosyasını silin veya yeniden adlandırın!</p>";
+echo "</div>";
 ?>
