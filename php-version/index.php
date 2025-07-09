@@ -1,292 +1,339 @@
 <?php
-require_once 'config.php';
+session_start();
 ?>
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo SITE_NAME; ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>KiWiPazari - Sosyal Medya Servisleri</title>
     <style>
-        body { background: #0f172a; color: #e2e8f0; }
-        .gradient-bg { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); }
-        .border-slate { border-color: #475569; }
-        .text-slate-400 { color: #94a3b8; }
-        .hover-glow:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .main-card {
+            background: rgba(45, 45, 45, 0.9);
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            position: relative;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4A90E2;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+        }
+        
+        .subtitle {
+            color: #bbb;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .order-search-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(74, 144, 226, 0.2);
+            color: #4A90E2;
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .order-search-btn:hover {
+            background: rgba(74, 144, 226, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .key-form {
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ddd;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #4A90E2;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        
+        .form-group input::placeholder {
+            color: #888;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #4A90E2 0%, #357abd 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(74, 144, 226, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .admin-link {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        
+        .admin-link a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.3s ease;
+        }
+        
+        .admin-link a:hover {
+            color: #4A90E2;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: rgba(45, 45, 45, 0.95);
+            border-radius: 15px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-title {
+            color: #4A90E2;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            color: #fff;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .alert-error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #ff6b6b;
+        }
+        
+        .alert-success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            color: #51cf66;
+        }
     </style>
 </head>
-<body class="min-h-screen gradient-bg">
-    <div class="container mx-auto px-4 py-8">
-        <div class="max-w-md mx-auto">
-            <!-- Logo/Title -->
-            <div class="text-center mb-8">
-                <h1 class="text-4xl font-bold text-white mb-2"><?php echo SITE_NAME; ?></h1>
-                <p class="text-slate-400">Sosyal Medya Hizmetleri</p>
-            </div>
-
-            <!-- Key Validation Form -->
-            <div class="bg-gray-800 rounded-lg p-6 shadow-lg border border-slate">
-                <h2 class="text-xl font-semibold mb-4 text-white">Anahtar Doğrulama</h2>
+<body>
+    <div class="container">
+        <div class="main-card">
+            <button class="order-search-btn" onclick="openOrderModal()">Sipariş Sorgula</button>
+            
+            <h1 class="logo">KiWiPazari</h1>
+            <p class="subtitle">Sosyal medya hesaplarınızı büyütmek için güvenilir servisler</p>
+            
+            <form class="key-form" action="key-validator.php" method="POST">
+                <div class="form-group">
+                    <label for="key">Anahtar Kodunuz</label>
+                    <input type="text" id="key" name="key" placeholder="Anahtar kodunuzu girin..." required>
+                </div>
                 
-                <form id="keyValidationForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-2">
-                            Anahtar Değeri
-                        </label>
-                        <input 
-                            type="text" 
-                            id="keyValue" 
-                            name="keyValue"
-                            placeholder="Anahtar değerinizi girin..."
-                            class="w-full px-3 py-2 bg-gray-700 border border-slate rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        >
-                    </div>
-                    
-                    <button 
-                        type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors hover-glow"
-                    >
-                        Anahtarı Doğrula
-                    </button>
-                </form>
-
-                <!-- Loading State -->
-                <div id="loadingState" class="hidden text-center py-4">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                    <p class="mt-2 text-slate-400">Doğrulanıyor...</p>
-                </div>
-
-                <!-- Key Info -->
-                <div id="keyInfo" class="hidden mt-6 p-4 bg-gray-700 rounded-lg border border-slate">
-                    <h3 class="font-semibold text-white mb-2">Anahtar Bilgileri</h3>
-                    <div id="keyDetails" class="space-y-2 text-sm text-slate-400"></div>
-                </div>
-
-                <!-- Order Form -->
-                <div id="orderForm" class="hidden mt-6 p-4 bg-gray-700 rounded-lg border border-slate">
-                    <h3 class="font-semibold text-white mb-4">Sipariş Ver</h3>
-                    <form id="createOrderForm" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-slate-400 mb-2">
-                                Link
-                            </label>
-                            <input 
-                                type="url" 
-                                id="orderLink" 
-                                name="link"
-                                placeholder="Hedef linki girin..."
-                                class="w-full px-3 py-2 bg-gray-600 border border-slate rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                            >
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-slate-400 mb-2">
-                                Miktar
-                            </label>
-                            <input 
-                                type="number" 
-                                id="orderQuantity" 
-                                name="quantity"
-                                min="1"
-                                max="1000"
-                                placeholder="1"
-                                class="w-full px-3 py-2 bg-gray-600 border border-slate rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                            >
-                        </div>
-                        
-                        <button 
-                            type="submit"
-                            class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors hover-glow"
-                        >
-                            Sipariş Oluştur
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Order Search -->
-            <div class="mt-8 bg-gray-800 rounded-lg p-6 shadow-lg border border-slate">
-                <h2 class="text-xl font-semibold mb-4 text-white">Sipariş Sorgula</h2>
-                
-                <form id="orderSearchForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-2">
-                            Sipariş ID
-                        </label>
-                        <input 
-                            type="text" 
-                            id="searchOrderId" 
-                            name="orderId"
-                            placeholder="#2384344 veya 2384344"
-                            class="w-full px-3 py-2 bg-gray-700 border border-slate rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        >
-                    </div>
-                    
-                    <button 
-                        type="submit"
-                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md transition-colors hover-glow"
-                    >
-                        Sipariş Ara
-                    </button>
-                </form>
-
-                <!-- Order Result -->
-                <div id="orderResult" class="hidden mt-6 p-4 bg-gray-700 rounded-lg border border-slate">
-                    <div id="orderDetails" class="space-y-2 text-sm text-slate-400"></div>
-                </div>
+                <button type="submit" class="btn">Doğrula</button>
+            </form>
+            
+            <div class="admin-link">
+                <a href="admin-login.php">Yönetici Girişi</a>
             </div>
         </div>
     </div>
-
+    
+    <!-- Order Search Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Sipariş Sorgula</h3>
+                <button class="close-btn" onclick="closeOrderModal()">&times;</button>
+            </div>
+            
+            <div id="orderResult"></div>
+            
+            <form id="orderSearchForm">
+                <div class="form-group">
+                    <label for="orderId">Sipariş ID</label>
+                    <input type="text" id="orderId" name="orderId" placeholder="#2384344 veya 2384344" required>
+                </div>
+                
+                <button type="submit" class="btn">Sorgula</button>
+            </form>
+        </div>
+    </div>
+    
     <script>
-        let currentKey = null;
-        let currentService = null;
-
-        // Key validation
-        document.getElementById('keyValidationForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const keyValue = document.getElementById('keyValue').value;
-            const loadingState = document.getElementById('loadingState');
-            const keyInfo = document.getElementById('keyInfo');
-            const orderForm = document.getElementById('orderForm');
-            
-            loadingState.classList.remove('hidden');
-            keyInfo.classList.add('hidden');
-            orderForm.classList.add('hidden');
-            
-            try {
-                const response = await fetch('api/validate-key.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ keyValue })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentKey = data.key;
-                    currentService = data.service;
-                    
-                    document.getElementById('keyDetails').innerHTML = `
-                        <p><strong>Anahtar Adı:</strong> ${data.key.name}</p>
-                        <p><strong>Platform:</strong> ${data.service.platform}</p>
-                        <p><strong>Kategori:</strong> ${data.service.category}</p>
-                        <p><strong>Kalan Miktar:</strong> ${data.key.max_amount - data.key.used_amount}</p>
-                    `;
-                    
-                    // Set quantity limits
-                    const quantityInput = document.getElementById('orderQuantity');
-                    quantityInput.max = data.key.max_amount - data.key.used_amount;
-                    quantityInput.min = data.service.min_quantity;
-                    
-                    keyInfo.classList.remove('hidden');
-                    orderForm.classList.remove('hidden');
-                } else {
-                    alert('Geçersiz anahtar: ' + data.message);
-                }
-            } catch (error) {
-                alert('Bir hata oluştu: ' + error.message);
-            } finally {
-                loadingState.classList.add('hidden');
+        function openOrderModal() {
+            document.getElementById('orderModal').classList.add('active');
+        }
+        
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.remove('active');
+            document.getElementById('orderResult').innerHTML = '';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('orderModal');
+            if (event.target === modal) {
+                closeOrderModal();
             }
-        });
-
-        // Order creation
-        document.getElementById('createOrderForm').addEventListener('submit', async (e) => {
+        }
+        
+        // Order search form handler
+        document.getElementById('orderSearchForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            if (!currentKey || !currentService) {
-                alert('Lütfen önce anahtarı doğrulayın');
+            const orderId = document.getElementById('orderId').value.trim();
+            const resultDiv = document.getElementById('orderResult');
+            
+            if (!orderId) {
+                resultDiv.innerHTML = '<div class="alert alert-error">Lütfen sipariş ID\'sini girin</div>';
                 return;
             }
             
-            const link = document.getElementById('orderLink').value;
-            const quantity = parseInt(document.getElementById('orderQuantity').value);
+            // Remove # prefix if present
+            const cleanOrderId = orderId.startsWith('#') ? orderId.substring(1) : orderId;
             
-            try {
-                const response = await fetch('api/create-order.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        keyValue: currentKey.key_value,
-                        serviceId: currentService.id,
-                        link,
-                        quantity
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('Sipariş başarıyla oluşturuldu!\nSipariş ID: ' + data.order.order_id);
-                    
-                    // Reset form
-                    document.getElementById('createOrderForm').reset();
-                    document.getElementById('keyValidationForm').reset();
-                    document.getElementById('keyInfo').classList.add('hidden');
-                    document.getElementById('orderForm').classList.add('hidden');
-                    
-                    // Auto-search the created order
-                    document.getElementById('searchOrderId').value = data.order.order_id;
-                    document.getElementById('orderSearchForm').dispatchEvent(new Event('submit'));
-                } else {
-                    alert('Sipariş oluşturulamadı: ' + data.message);
-                }
-            } catch (error) {
-                alert('Bir hata oluştu: ' + error.message);
-            }
-        });
-
-        // Order search
-        document.getElementById('orderSearchForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+            resultDiv.innerHTML = '<div class="alert alert-success">Sipariş aranıyor...</div>';
             
-            const orderId = document.getElementById('searchOrderId').value.replace('#', '');
-            const orderResult = document.getElementById('orderResult');
-            
-            try {
-                const response = await fetch('api/search-order.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ orderId })
-                });
-                
-                const data = await response.json();
-                
+            // Simulate API call (replace with actual API call)
+            fetch('order-search.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'orderId=' + encodeURIComponent(cleanOrderId)
+            })
+            .then(response => response.json())
+            .then(data => {
                 if (data.success) {
                     const order = data.order;
-                    const service = data.service;
-                    
-                    document.getElementById('orderDetails').innerHTML = `
-                        <p><strong>Sipariş ID:</strong> ${order.order_id}</p>
-                        <p><strong>Platform:</strong> ${service.platform}</p>
-                        <p><strong>Kategori:</strong> ${service.category}</p>
-                        <p><strong>Link:</strong> ${order.link}</p>
-                        <p><strong>Miktar:</strong> ${order.quantity}</p>
-                        <p><strong>Durum:</strong> ${order.status}</p>
-                        <p><strong>Oluşturulma:</strong> ${new Date(order.created_at).toLocaleString('tr-TR')}</p>
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>Sipariş Bulundu!</strong><br>
+                            Sipariş ID: #${order.orderId}<br>
+                            Durum: ${order.status}<br>
+                            Miktar: ${order.quantity}<br>
+                            Servis: ${order.service}
+                        </div>
                     `;
-                    
-                    orderResult.classList.remove('hidden');
                 } else {
-                    alert('Sipariş bulunamadı: ' + data.message);
-                    orderResult.classList.add('hidden');
+                    resultDiv.innerHTML = `<div class="alert alert-error">${data.message}</div>`;
                 }
-            } catch (error) {
-                alert('Bir hata oluştu: ' + error.message);
-            }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = '<div class="alert alert-error">Bir hata oluştu. Lütfen tekrar deneyin.</div>';
+            });
         });
     </script>
 </body>
