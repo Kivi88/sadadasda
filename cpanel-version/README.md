@@ -1,217 +1,142 @@
-# KiWiPazari - cPanel Installation Guide
+# KiWiPazari - PHP/MySQL Version
 
-Bu doküman KiWiPazari uygulamasının cPanel hosting ortamında nasıl kurulacağını açıklamaktadır.
+Bu, KiWiPazari uygulamasının PHP/MySQL ile yazılmış tam işlevsel versiyonudur. cPanel shared hosting ortamında çalışacak şekilde optimize edilmiştir.
 
-## 📋 Gereksinimler
+## Özellikler
 
-- cPanel hosting hesabı
-- Node.js desteği (en az v16.0.0)
-- PostgreSQL veya MySQL veritabanı
-- SSH erişimi (opsiyonel)
+- ✅ **Ana Sayfa**: Key doğrulama ve sipariş oluşturma
+- ✅ **Sipariş Sorgulama**: Sipariş durumu takibi
+- ✅ **Admin Paneli**: Tam yönetim sistemi
+- ✅ **API Yönetimi**: Harici API'leri ekle, test et, servisleri çek
+- ✅ **Servis Yönetimi**: Servisleri görüntüle ve filtrele
+- ✅ **Key Yönetimi**: Key oluştur, düzenle, indir
+- ✅ **Sipariş Yönetimi**: Siparişleri takip et
+- ✅ **Güvenlik**: CSRF koruması, rate limiting, input validation
+- ✅ **Harici API Entegrasyonu**: Gerçek API'lerle sipariş oluşturma
 
-## 🚀 Kurulum Adımları
+## Kurulum
 
-### 1. Dosyaları Yükleme
-
-1. Bu klasördeki tüm dosyaları cPanel File Manager ile hosting hesabınıza yükleyin
-2. Dosyaları `public_html` veya alt domain klasörüne koyun
+### 1. Dosyaları Yükleyin
+- Tüm dosyaları cPanel File Manager ile public_html klasörüne yükleyin
+- Alternatif olarak FTP ile yükleyebilirsiniz
 
 ### 2. Veritabanı Kurulumu
+- `yoursite.com/setup.php` adresine gidin
+- Veritabanı bilgilerini girin:
+  - **Host**: localhost (genellikle)
+  - **Database**: MySQL veritabanı adı
+  - **Username**: MySQL kullanıcı adı
+  - **Password**: MySQL şifresi
+  - **Admin Password**: Admin panel şifresi (varsayılan: admin123)
 
-1. cPanel'de **MySQL Databases** veya **PostgreSQL** bölümüne gidin
-2. Yeni bir veritabanı oluşturun (örn: `kiwipazari_db`)
-3. Veritabanı kullanıcısı oluşturun ve tüm yetkileri verin
-4. Bağlantı bilgilerini kaydedin
-
-### 3. Ortam Değişkenlerini Ayarlama
-
-1. `.env.example` dosyasını `.env` olarak kopyalayın
-2. Veritabanı bilgilerinizi girin:
-
+### 3. Dosya İzinleri
 ```bash
-DATABASE_URL=postgresql://kullanici:sifre@localhost:5432/veritabani_adi
-PORT=3000
-NODE_ENV=production
-SESSION_SECRET=gizli-anahtar-buraya-yazin
+chmod 755 /public_html/
+chmod 644 /public_html/*.php
+chmod 644 /public_html/.htaccess
+chmod 755 /public_html/kiwi-management-portal/
+chmod 644 /public_html/kiwi-management-portal/*.php
 ```
 
-### 4. Bağımlılıkları Yükleme
+## Kullanım
 
-SSH ile bağlanın ve şu komutu çalıştırın:
+### Ana Sayfa
+- `yoursite.com` - Key doğrulama ve sipariş oluşturma
+- Sipariş sorgulama sistemi
 
-```bash
-npm install
-```
+### Admin Paneli
+- `yoursite.com/kiwi-management-portal` - Admin girişi
+- Varsayılan şifre: admin123 (setup sırasında değiştirilebilir)
 
-Eğer SSH erişiminiz yoksa, cPanel'in **Node.js Selector** özelliğini kullanın.
+### Admin Paneli Özellikleri:
 
-### 5. Veritabanı Tablolarını Oluşturma
+#### 1. API Yönetimi
+- Harici API'leri ekle, düzenle, sil
+- API testleri yapma
+- Servisleri otomatik çekme (sınırsız veya limitli)
 
-İlk çalıştırmada tablolar otomatik oluşturulacaktır. Manuel olarak oluşturmak için:
+#### 2. Servis Yönetimi
+- Tüm servisleri görüntüleme
+- Platform, kategori ve API'ye göre filtreleme
+- Sayfalama ve arama
 
-```sql
--- APIs tablosu
-CREATE TABLE apis (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
-    base_url TEXT NOT NULL,
-    api_key TEXT NOT NULL,
-    services_endpoint TEXT,
-    order_endpoint TEXT,
-    status_endpoint TEXT,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
-);
+#### 3. Key Yönetimi
+- Key oluşturma (otomatik benzersiz key'ler)
+- Key düzenleme ve silme
+- Servis adına göre key'leri toplu indirme
+- Kullanım durumu takibi
 
--- Services tablosu
-CREATE TABLE services (
-    id SERIAL PRIMARY KEY,
-    api_id INTEGER REFERENCES apis(id),
-    external_id TEXT,
-    name TEXT NOT NULL,
-    platform TEXT,
-    category TEXT,
-    description TEXT,
-    min_quantity INTEGER DEFAULT 1,
-    max_quantity INTEGER DEFAULT 10000,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
-);
+#### 4. Sipariş Yönetimi
+- Tüm siparişleri görüntüleme
+- Durum takibi (bekleyen, işlenen, tamamlanan, vb.)
+- Harici API'lerle otomatik senkronizasyon
 
--- Keys tablosu
-CREATE TABLE keys (
-    id SERIAL PRIMARY KEY,
-    key_value TEXT NOT NULL UNIQUE,
-    name TEXT,
-    service_id INTEGER REFERENCES services(id),
-    max_amount INTEGER DEFAULT 1000,
-    used_amount INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
-);
+## Güvenlik Özellikleri
 
--- Orders tablosu
-CREATE TABLE orders (
-    id SERIAL PRIMARY KEY,
-    order_id TEXT NOT NULL UNIQUE,
-    key_id INTEGER REFERENCES keys(id),
-    service_id INTEGER REFERENCES services(id),
-    link TEXT NOT NULL,
-    quantity INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending',
-    external_order_id TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-```
+- **CSRF Koruması**: Tüm formlarda token koruması
+- **Rate Limiting**: Brute force saldırılarına karşı koruma
+- **Input Validation**: Tüm girişlerde doğrulama
+- **SQL Injection Koruması**: Prepared statements kullanımı
+- **XSS Koruması**: HTML entity encoding
+- **Session Security**: Güvenli session ayarları
+- **File Protection**: .htaccess ile dosya koruması
 
-### 6. Uygulamayı Başlatma
+## Veritabanı Yapısı
 
-cPanel'de **Node.js Selector** ile:
+### Tablolar:
+- `apis` - Harici API bilgileri
+- `services` - API servis bilgileri
+- `keys` - Müşteri key'leri
+- `orders` - Sipariş bilgileri
+- `rate_limits` - Rate limiting verileri
 
-1. **Node.js Selector**'a gidin
-2. Doğru klasörü seçin
-3. **Startup File**: `index.js`
-4. **Application Mode**: Production
-5. **Start** butonuna tıklayın
+## Desteklenen API Formatları
 
-Veya SSH ile:
+Sistem çeşitli API formatlarını destekler:
+- MedyaBayim API
+- Standart SMM panel API'leri
+- Özel API formatları
 
-```bash
-node index.js
-```
+## Troubleshooting
 
-## 🔧 Konfigürasyon
+### Yaygın Sorunlar:
 
-### SSL/HTTPS Kurulumu
+1. **Veritabanı Bağlantı Hatası**
+   - config.php dosyasında veritabanı bilgilerini kontrol edin
+   - MySQL servisinin çalıştığından emin olun
 
-Eğer SSL sertifikanız varsa:
+2. **Admin Panel Erişim Sorunu**
+   - URL: yoursite.com/kiwi-management-portal
+   - Şifre: setup sırasında belirlediğiniz şifre
 
-1. `.env` dosyasında `SECURE_COOKIES=true` yapın
-2. `NODE_ENV=production` olduğundan emin olun
+3. **API Servisleri Çekilmiyor**
+   - API URL ve key'i doğru olduğundan emin olun
+   - API test özelliğini kullanın
 
-### Port Ayarları
+4. **Sipariş Oluşturma Hatası**
+   - Key'in aktif olduğundan emin olun
+   - Yeterli key limitinin olduğunu kontrol edin
 
-cPanel hosting genelde belirli portlar kullanır:
+## Teknik Detaylar
 
-- Shared hosting: Genelde port 3000 veya hosting sağlayıcınızın belirttiği port
-- VPS/Dedicated: İstediğiniz port (3000, 8080, vb.)
+- **PHP Version**: 7.4+
+- **MySQL Version**: 5.7+
+- **Required Extensions**: PDO, MySQLi, cURL, JSON
+- **Memory Limit**: 128MB önerilir
+- **Execution Time**: 30 saniye
 
-### Domain/Subdomain Kurulumu
+## Lisans
 
-1. cPanel'de **Subdomains** bölümünden yeni subdomain oluşturun
-2. Document Root'u uygulamanızın bulunduğu klasör yapın
-3. DNS ayarlarını kontrol edin
+Bu proje MIT lisansı altında lisanslanmıştır.
 
-## 🔒 Güvenlik Ayarları
+## Destek
 
-### Admin Şifresi
-
-Varsayılan admin şifresi: `ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO`
-
-Admin paneline erişim: `https://yourdomain.com/kiwi-management-portal`
-
-### Güvenlik Önlemleri
-
-- `.env` dosyasının public erişime kapalı olduğundan emin olun
-- Admin şifresini mutlaka değiştirin
-- SSL sertifikası kullanın
-- Güvenlik duvarı ayarlarını kontrol edin
-
-## 📁 Dosya Yapısı
-
-```
-cpanel-version/
-├── index.js           # Ana sunucu dosyası
-├── routes.js          # API route'ları
-├── storage.js         # Veritabanı işlemleri
-├── package.json       # Bağımlılıklar
-├── .env.example       # Ortam değişkenleri örneği
-├── README.md          # Bu dosya
-└── public/            # Frontend dosyaları (build sonrası)
-```
-
-## 🚨 Sorun Giderme
-
-### Yaygın Hatalar
-
-1. **Port zaten kullanımda**
-   - `.env` dosyasında farklı port deneyin
-   - `netstat -tulpn` ile kullanılan portları kontrol edin
-
-2. **Veritabanı bağlantı hatası**
-   - DATABASE_URL'in doğru olduğundan emin olun
-   - Veritabanı kullanıcısının yetkileri kontrolü
-
-3. **Node.js versiyonu uyumsuz**
-   - En az Node.js v16.0.0 gerekli
-   - cPanel Node.js Selector'dan güncelleme yapın
-
-### Log Kontrolü
-
-```bash
-# PM2 kullanıyorsanız
-pm2 logs
-
-# Normal çalıştırma
-node index.js
-```
-
-## 📞 Destek
-
-Kurulum sırasında sorun yaşarsanız:
-
-1. Log dosyalarını kontrol edin
-2. .env dosyasının doğru yapılandırıldığından emin olun
+Herhangi bir sorun yaşarsanız:
+1. README dosyasını kontrol edin
+2. Hata loglarını inceleyin
 3. Veritabanı bağlantısını test edin
+4. API bağlantılarını kontrol edin
 
-## 🎯 Özellikler
+---
 
-- ✅ API key yönetimi
-- ✅ Servis yönetimi
-- ✅ Sipariş takibi
-- ✅ Admin paneli
-- ✅ Güvenlik koruması
-- ✅ Rate limiting
-- ✅ CSRF koruması
-
-Kurulum tamamlandığında uygulamanız tamamen çalışır durumda olacak!
+**Not**: Bu sistem production-ready olarak tasarlanmıştır ve tüm güvenlik önlemleri alınmıştır. Düzenli backup almayı unutmayın.

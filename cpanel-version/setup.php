@@ -1,418 +1,191 @@
 <?php
-/**
- * KiWiPazari Web Tabanlı Kurulum Scripti
- * Tarayıcı üzerinden kolay kurulum için
- */
+// Database setup script
+$setup_complete = false;
+$error_message = '';
 
-header('Content-Type: text/html; charset=utf-8');
-
-// Güvenlik kontrolü
-$setup_completed = file_exists('.setup_completed');
-if ($setup_completed && !isset($_GET['force'])) {
-    die('<h1>Kurulum Tamamlanmış</h1><p>Kurulum zaten tamamlanmış. Tekrar kurmak için URL\'ye ?force=1 ekleyin.</p>');
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $db_host = $_POST['db_host'] ?? 'localhost';
+    $db_name = $_POST['db_name'] ?? 'kiwipazari_db';
+    $db_user = $_POST['db_user'] ?? 'root';
+    $db_pass = $_POST['db_pass'] ?? '';
+    $admin_password = $_POST['admin_password'] ?? 'admin123';
+    
+    try {
+        // Create database connection
+        $pdo = new PDO("mysql:host=$db_host;charset=utf8mb4", $db_user, $db_pass);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        
+        // Create database if it doesn't exist
+        $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name`");
+        $pdo->exec("USE `$db_name`");
+        
+        // Create tables
+        $tables = [
+            "CREATE TABLE IF NOT EXISTS `apis` (
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                `name` varchar(255) NOT NULL,
+                `url` text NOT NULL,
+                `api_key` text NOT NULL,
+                `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+            
+            "CREATE TABLE IF NOT EXISTS `services` (
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                `api_id` int(11) NOT NULL,
+                `external_id` varchar(255) NOT NULL,
+                `name` text NOT NULL,
+                `category` varchar(255) DEFAULT NULL,
+                `platform` varchar(255) DEFAULT NULL,
+                `min_amount` int(11) DEFAULT 1,
+                `max_amount` int(11) DEFAULT 10000,
+                `price` decimal(10,4) DEFAULT 0.0000,
+                `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                KEY `api_id` (`api_id`),
+                KEY `external_id` (`external_id`),
+                CONSTRAINT `services_ibfk_1` FOREIGN KEY (`api_id`) REFERENCES `apis` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+            
+            "CREATE TABLE IF NOT EXISTS `keys` (
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                `key_value` varchar(255) NOT NULL UNIQUE,
+                `key_name` varchar(255) NOT NULL,
+                `service_id` int(11) NOT NULL,
+                `max_amount` int(11) NOT NULL,
+                `used_amount` int(11) DEFAULT 0,
+                `is_active` tinyint(1) DEFAULT 1,
+                `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                KEY `service_id` (`service_id`),
+                KEY `key_value` (`key_value`),
+                CONSTRAINT `keys_ibfk_1` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+            
+            "CREATE TABLE IF NOT EXISTS `orders` (
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                `order_id` varchar(255) NOT NULL UNIQUE,
+                `key_id` int(11) NOT NULL,
+                `service_id` int(11) NOT NULL,
+                `external_order_id` varchar(255) DEFAULT NULL,
+                `quantity` int(11) NOT NULL,
+                `link` text NOT NULL,
+                `status` enum('pending','processing','completed','cancelled','error') DEFAULT 'pending',
+                `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                KEY `key_id` (`key_id`),
+                KEY `service_id` (`service_id`),
+                KEY `order_id` (`order_id`),
+                CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`key_id`) REFERENCES `keys` (`id`) ON DELETE CASCADE,
+                CONSTRAINT `orders_ibfk_2` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+            
+            "CREATE TABLE IF NOT EXISTS `rate_limits` (
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                `identifier` varchar(255) NOT NULL,
+                `attempts` int(11) DEFAULT 1,
+                `last_attempt` int(11) NOT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `identifier` (`identifier`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        ];
+        
+        foreach ($tables as $table) {
+            $pdo->exec($table);
+        }
+        
+        // Update config file
+        $config_content = file_get_contents('config.php');
+        $config_content = str_replace("define('DB_HOST', 'localhost');", "define('DB_HOST', '$db_host');", $config_content);
+        $config_content = str_replace("define('DB_NAME', 'kiwipazari_db');", "define('DB_NAME', '$db_name');", $config_content);
+        $config_content = str_replace("define('DB_USER', 'root');", "define('DB_USER', '$db_user');", $config_content);
+        $config_content = str_replace("define('DB_PASS', '');", "define('DB_PASS', '$db_pass');", $config_content);
+        
+        $admin_hash = password_hash($admin_password, PASSWORD_DEFAULT);
+        $config_content = str_replace('$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', $admin_hash, $config_content);
+        
+        file_put_contents('config.php', $config_content);
+        
+        $setup_complete = true;
+        
+    } catch (Exception $e) {
+        $error_message = "Setup failed: " . $e->getMessage();
+    }
 }
-
-$step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
-$action = isset($_POST['action']) ? $_POST['action'] : '';
-
 ?>
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KiWiPazari Kurulum</title>
+    <title>KiWiPazari Setup</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-            max-width: 600px;
-            width: 100%;
-        }
-        .logo {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-        }
-        .step {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-        .step-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #333;
-        }
-        input, textarea, select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .btn {
-            background: #667eea;
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .btn:hover {
-            background: #5a67d8;
-        }
-        .btn-success {
-            background: #48bb78;
-        }
-        .btn-success:hover {
-            background: #38a169;
-        }
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-        .progress {
-            background: #e9ecef;
-            border-radius: 10px;
-            height: 10px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        .progress-bar {
-            background: #667eea;
-            height: 100%;
-            transition: width 0.3s;
-        }
-        .code {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            border-left: 4px solid #667eea;
-            margin: 15px 0;
-        }
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { max-width: 500px; width: 100%; padding: 2rem; background: #2a2a2a; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h1 { text-align: center; margin-bottom: 2rem; color: #4a9eff; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        input, select { width: 100%; padding: 0.75rem; border: 1px solid #555; border-radius: 4px; background: #3a3a3a; color: #fff; }
+        input:focus, select:focus { outline: none; border-color: #4a9eff; }
+        button { width: 100%; padding: 0.75rem; background: #4a9eff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; margin-top: 1rem; }
+        button:hover { background: #357abd; }
+        .error { color: #ff4444; margin-top: 1rem; text-align: center; }
+        .success { color: #44ff44; margin-top: 1rem; text-align: center; }
+        .info { background: #333; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; border-left: 4px solid #4a9eff; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">KIWIPAZARI</div>
-        <div class="subtitle">Otomatik Kurulum Sihirbazı</div>
+        <h1>KiWiPazari Kurulum</h1>
         
-        <div class="progress">
-            <div class="progress-bar" style="width: <?= $step * 25 ?>%"></div>
-        </div>
-
-        <?php if ($step == 1): ?>
-            <!-- Adım 1: Hoş Geldiniz -->
-            <div class="step">
-                <div class="step-title">🎉 Hoş Geldiniz!</div>
-                <p>KiWiPazari API key yönetim sistemi kurulumuna hoş geldiniz. Bu sihirbaz size adım adım kurulum sürecinde rehberlik edecek.</p>
-                
-                <h4>Sistem Gereksinimleri:</h4>
-                <ul style="margin: 15px 0; padding-left: 20px;">
-                    <li>Node.js v16+ (cPanel Node.js Selector'dan aktifleştirin)</li>
-                    <li>MySQL veya PostgreSQL veritabanı</li>
-                    <li>cPanel hosting hesabı</li>
-                </ul>
-
-                <?php
-                // Sistem kontrolü
-                $checks = [];
-                
-                // Fonksiyon kontrolü
-                $exec_available = function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')));
-                
-                if ($exec_available) {
-                    // Node.js kontrolü
-                    exec('node --version 2>&1', $node_output, $node_return);
-                    $checks['node'] = $node_return === 0;
-                    $node_version = $checks['node'] ? trim($node_output[0]) : 'Bulunamadı';
-                    
-                    // NPM kontrolü  
-                    exec('npm --version 2>&1', $npm_output, $npm_return);
-                    $checks['npm'] = $npm_return === 0;
-                    $npm_version = $checks['npm'] ? trim($npm_output[0]) : 'Bulunamadı';
-                } else {
-                    // exec() devre dışı - manuel kontrol gerekli
-                    $checks['node'] = true; // Kullanıcı manuel kontrol etsin
-                    $checks['npm'] = true;
-                    $node_version = 'Manuel kontrol gerekli';
-                    $npm_version = 'Manuel kontrol gerekli';
-                }
-                
-                // package.json kontrolü
-                $checks['package'] = file_exists('package.json');
-                
-                // Yazma izni kontrolü
-                $checks['writable'] = is_writable('.');
-                ?>
-
-                <h4>Sistem Durumu:</h4>
-                <ul style="margin: 15px 0; padding-left: 20px;">
-                    <li><?= $checks['node'] ? '✅' : '❌' ?> Node.js (<?= $node_version ?>)</li>
-                    <li><?= $checks['npm'] ? '✅' : '❌' ?> NPM (<?= $npm_version ?>)</li>
-                    <li><?= $checks['package'] ? '✅' : '❌' ?> package.json</li>
-                    <li><?= $checks['writable'] ? '✅' : '❌' ?> Yazma İzni</li>
-                </ul>
-
-                <?php if (!$exec_available): ?>
-                <div class="alert alert-warning">
-                    <strong>Bilgi:</strong> exec() fonksiyonu devre dışı. Bu normal bir durumdur. 
-                    Node.js'in aktif olduğundan emin olun ve kuruluma devam edin.
-                </div>
-                <?php endif; ?>
-
-                <?php $all_checks_passed = !in_array(false, $checks); ?>
-                
-                <?php if ($all_checks_passed): ?>
-                    <div class="alert alert-success">
-                        <strong>Harika!</strong> Sistem gereksinimleri karşılanıyor. Kuruluma devam edebilirsiniz.
-                    </div>
-                    <form method="get">
-                        <input type="hidden" name="step" value="2">
-                        <button type="submit" class="btn">Sonraki Adım →</button>
-                    </form>
-                <?php else: ?>
-                    <div class="alert alert-error">
-                        <strong>Dikkat!</strong> Bazı gereksinimler karşılanmıyor. Lütfen eksiklikleri giderin ve sayfayı yenileyin.
-                    </div>
-                    <button onclick="location.reload()" class="btn">Tekrar Kontrol Et</button>
-                <?php endif; ?>
+        <?php if ($setup_complete): ?>
+            <div class="success">
+                <h2>Kurulum Tamamlandı!</h2>
+                <p>Veritabanı başarıyla oluşturuldu. Artık uygulamayı kullanabilirsiniz.</p>
+                <button onclick="window.location.href='index.php'">Anasayfaya Git</button>
             </div>
-
-        <?php elseif ($step == 2): ?>
-            <!-- Adım 2: Veritabanı Ayarları -->
-            <?php if ($action == 'save_database'): ?>
-                <?php
-                // .env dosyasını oluştur
-                $env_content = "# KiWiPazari Environment Configuration\n";
-                $env_content .= "# Generated by setup wizard\n\n";
-                $env_content .= "DATABASE_URL=" . $_POST['database_url'] . "\n";
-                $env_content .= "PORT=" . $_POST['port'] . "\n";
-                $env_content .= "NODE_ENV=" . $_POST['environment'] . "\n";
-                $env_content .= "SESSION_SECRET=" . bin2hex(random_bytes(32)) . "\n";
-                $env_content .= "SECURE_COOKIES=" . ($_POST['environment'] == 'production' ? 'true' : 'false') . "\n";
-                
-                if (file_put_contents('.env', $env_content)) {
-                    echo '<div class="alert alert-success"><strong>Başarılı!</strong> Veritabanı ayarları kaydedildi.</div>';
-                    echo '<form method="get"><input type="hidden" name="step" value="3"><button type="submit" class="btn">Sonraki Adım →</button></form>';
-                } else {
-                    echo '<div class="alert alert-error"><strong>Hata!</strong> .env dosyası oluşturulamadı.</div>';
-                }
-                ?>
-            <?php else: ?>
-                <div class="step">
-                    <div class="step-title">🗄️ Veritabanı Ayarları</div>
-                    <p>Veritabanı bağlantı bilgilerinizi girin:</p>
-                    
-                    <form method="post">
-                        <input type="hidden" name="action" value="save_database">
-                        
-                        <div class="form-group">
-                            <label>Veritabanı Türü:</label>
-                            <select name="db_type" onchange="updateDatabaseUrl()">
-                                <option value="postgresql">PostgreSQL</option>
-                                <option value="mysql">MySQL</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Veritabanı URL:</label>
-                            <input type="text" name="database_url" id="database_url" 
-                                   placeholder="postgresql://kullanici:sifre@localhost:5432/veritabani_adi" required>
-                            <small style="color: #666;">cPanel veritabanı bilgilerinizi buraya girin</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Port:</label>
-                            <input type="number" name="port" value="3000" min="1000" max="65535" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Ortam:</label>
-                            <select name="environment">
-                                <option value="production">Production (Canlı)</option>
-                                <option value="development">Development (Test)</option>
-                            </select>
-                        </div>
-                        
-                        <button type="submit" class="btn">Ayarları Kaydet</button>
-                    </form>
-                </div>
-                
-                <script>
-                function updateDatabaseUrl() {
-                    const dbType = document.querySelector('select[name="db_type"]').value;
-                    const urlField = document.getElementById('database_url');
-                    
-                    if (dbType === 'postgresql') {
-                        urlField.placeholder = "postgresql://kullanici:sifre@localhost:5432/veritabani_adi";
-                    } else {
-                        urlField.placeholder = "mysql://kullanici:sifre@localhost:3306/veritabani_adi";
-                    }
-                }
-                </script>
-            <?php endif; ?>
-
-        <?php elseif ($step == 3): ?>
-            <!-- Adım 3: Bağımlılık Kurulumu -->
-            <?php if ($action == 'install_dependencies'): ?>
-                <div class="step">
-                    <div class="step-title">📦 Bağımlılıklar Yükleniyor...</div>
-                    <p>Bu işlem birkaç dakika sürebilir. Lütfen bekleyin...</p>
-                    
-                    <?php
-                    $exec_available = function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')));
-                    
-                    if ($exec_available) {
-                        echo '<div class="code">';
-                        echo 'npm install --production<br><br>';
-                        
-                        // NPM install komutunu çalıştır
-                        $install_command = 'npm install --production 2>&1';
-                        exec($install_command, $install_output, $install_return);
-                        
-                        foreach ($install_output as $line) {
-                            echo htmlspecialchars($line) . '<br>';
-                        }
-                        echo '</div>';
-                        
-                        if ($install_return === 0) {
-                            echo '<div class="alert alert-success"><strong>Başarılı!</strong> Bağımlılıklar yüklendi.</div>';
-                            echo '<form method="get"><input type="hidden" name="step" value="4"><button type="submit" class="btn">Sonraki Adım →</button></form>';
-                        } else {
-                            echo '<div class="alert alert-error"><strong>Hata!</strong> Bağımlılıklar yüklenemedi.</div>';
-                            echo '<button onclick="history.back()" class="btn">Geri Dön</button>';
-                        }
-                    } else {
-                        // exec() kullanılamıyor - manuel kurulum talimatları
-                        echo '<div class="alert alert-warning">';
-                        echo '<strong>exec() fonksiyonu devre dışı.</strong><br>';
-                        echo 'Bağımlılıkları manuel olarak yüklemeniz gerekiyor.';
-                        echo '</div>';
-                        
-                        echo '<div class="code">';
-                        echo '<strong>Terminal/SSH ile bağlanın ve şu komutu çalıştırın:</strong><br><br>';
-                        echo 'cd ' . getcwd() . '<br>';
-                        echo 'npm install --production<br><br>';
-                        echo '<strong>Veya cPanel Node.js Selector kullanın:</strong><br>';
-                        echo '1. cPanel Node.js Selector\'a gidin<br>';
-                        echo '2. Bu klasörü seçin<br>';
-                        echo '3. "Run NPM Install" butonuna tıklayın<br>';
-                        echo '</div>';
-                        
-                        // Kullanıcının tamamladığını onaylamasını bekle
-                        echo '<div class="alert alert-warning">';
-                        echo 'Bağımlılıkları yükledikten sonra devam edebilirsiniz.';
-                        echo '</div>';
-                        
-                        echo '<form method="get"><input type="hidden" name="step" value="4"><button type="submit" class="btn">Bağımlılıkları Yükledim, Devam Et →</button></form>';
-                    }
-                    ?>
-                </div>
-            <?php else: ?>
-                <div class="step">
-                    <div class="step-title">📦 Bağımlılık Kurulumu</div>
-                    <p>Node.js bağımlılıklarını yüklemek için hazırız.</p>
-                    
-                    <div class="alert alert-warning">
-                        <strong>Dikkat:</strong> Bu işlem birkaç dakika sürebilir ve internet bağlantısı gerektirir.
-                    </div>
-                    
-                    <form method="post">
-                        <input type="hidden" name="action" value="install_dependencies">
-                        <button type="submit" class="btn">Bağımlılıkları Yükle</button>
-                    </form>
-                </div>
-            <?php endif; ?>
-
-        <?php elseif ($step == 4): ?>
-            <!-- Adım 4: Tamamlandı -->
-            <div class="step">
-                <div class="step-title">🎉 Kurulum Tamamlandı!</div>
-                
-                <div class="alert alert-success">
-                    <strong>Tebrikler!</strong> KiWiPazari başarıyla kuruldu.
-                </div>
-                
-                <h4>📋 Sonraki Adımlar:</h4>
-                <ol style="margin: 15px 0; padding-left: 20px;">
-                    <li><strong>Veritabanı Tablolarını Oluşturun:</strong>
-                        <div class="code">phpMyAdmin'de install.sql dosyasını çalıştırın</div>
-                    </li>
-                    <li><strong>Uygulamayı Başlatın:</strong>
-                        <div class="code">node index.js</div>
-                    </li>
-                </ol>
-                
-                <h4>🔗 Erişim Bilgileri:</h4>
-                <ul style="margin: 15px 0; padding-left: 20px;">
-                    <li><strong>Ana Site:</strong> <?= "http://{$_SERVER['HTTP_HOST']}" ?></li>
-                    <li><strong>Admin Panel:</strong> <?= "http://{$_SERVER['HTTP_HOST']}/kiwi-management-portal" ?></li>
-                    <li><strong>Admin Şifre:</strong> <code>ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO</code></li>
-                </ul>
-                
-                <?php
-                // Kurulum tamamlandı işareti
-                file_put_contents('.setup_completed', date('Y-m-d H:i:s'));
-                ?>
-                
-                <button onclick="window.location.href='/'" class="btn btn-success">Ana Sayfaya Git</button>
+        <?php else: ?>
+            <div class="info">
+                <strong>Kurulum Bilgileri:</strong><br>
+                - Veritabanı tabloları otomatik olarak oluşturulacak<br>
+                - Admin paneli: /kiwi-management-portal<br>
+                - Varsayılan admin şifresi: admin123 (değiştirilebilir)
             </div>
+            
+            <form method="post">
+                <div class="form-group">
+                    <label for="db_host">Veritabanı Sunucusu:</label>
+                    <input type="text" id="db_host" name="db_host" value="localhost" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="db_name">Veritabanı Adı:</label>
+                    <input type="text" id="db_name" name="db_name" value="kiwipazari_db" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="db_user">Veritabanı Kullanıcısı:</label>
+                    <input type="text" id="db_user" name="db_user" value="root" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="db_pass">Veritabanı Şifresi:</label>
+                    <input type="password" id="db_pass" name="db_pass" placeholder="Boş bırakılabilir">
+                </div>
+                
+                <div class="form-group">
+                    <label for="admin_password">Admin Şifresi:</label>
+                    <input type="password" id="admin_password" name="admin_password" value="admin123" required>
+                </div>
+                
+                <button type="submit">Kurulumu Başlat</button>
+            </form>
+            
+            <?php if ($error_message): ?>
+                <div class="error"><?php echo htmlspecialchars($error_message); ?></div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </body>
