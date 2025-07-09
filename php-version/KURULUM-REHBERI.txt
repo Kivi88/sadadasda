@@ -1,0 +1,139 @@
+KiWiPazari cPanel Kurulum Rehberi
+===================================
+
+Bu hataları çözmek için aşağıdaki adımları takip edin:
+
+1. DOSYALARI YÜKLE
+=================
+- kiwipazari-php-mysql-final.zip dosyasını indir
+- cPanel File Manager'da public_html'e yükle
+- ZIP'i çıkar (Extract)
+
+2. VERİTABANI OLUŞTUR
+====================
+cPanel'de MySQL Databases bölümüne git:
+- Create New Database: "kiwipazari" 
+- Create Database User: "kiwi_user"
+- Kullanıcıya ALL PRIVILEGES ver
+
+3. KOLAY KURULUM
+===============
+setup-cpanel.php dosyasını kullan:
+- Tarayıcıda: https://yourdomain.com/setup-cpanel.php
+- Form doldur:
+  * Host: localhost
+  * Kullanıcı Adı: [cPanel_username]_kiwi_user
+  * Şifre: [database_password]
+  * Veritabanı: [cPanel_username]_kiwipazari
+- "Kurulumu Başlat" butonuna tıkla
+
+4. MANUEL KURULUM (Alternatif)
+==============================
+Eğer setup-cpanel.php çalışmazsa:
+
+A) config.php dosyasını düzenle:
+   - File Manager'da config.php'yi aç
+   - 9-12. satırları değiştir:
+   
+   define('DB_HOST', 'localhost');
+   define('DB_USER', 'CPANEL_USERNAME_kiwi_user');
+   define('DB_PASS', 'DATABASE_PASSWORD');
+   define('DB_NAME', 'CPANEL_USERNAME_kiwipazari');
+
+B) MySQL'de tabloları oluştur:
+   cPanel'de phpMyAdmin'e git ve şu SQL'i çalıştır:
+
+   CREATE TABLE `apis` (
+     `id` INT AUTO_INCREMENT PRIMARY KEY,
+     `name` VARCHAR(255) NOT NULL,
+     `url` VARCHAR(500) NOT NULL,
+     `api_key` VARCHAR(255) NOT NULL,
+     `is_active` BOOLEAN DEFAULT TRUE,
+     `last_sync` TIMESTAMP NULL,
+     `response_time` INT NULL,
+     `service_count` INT DEFAULT 0,
+     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+   );
+
+   CREATE TABLE `services` (
+     `id` INT AUTO_INCREMENT PRIMARY KEY,
+     `api_id` INT,
+     `external_id` VARCHAR(255) NOT NULL,
+     `name` VARCHAR(500) NOT NULL,
+     `platform` VARCHAR(100) NOT NULL,
+     `category` VARCHAR(100) NOT NULL,
+     `min_quantity` INT DEFAULT 1,
+     `max_quantity` INT DEFAULT 10000,
+     `is_active` BOOLEAN DEFAULT TRUE,
+     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+   );
+
+   CREATE TABLE `keys` (
+     `id` INT AUTO_INCREMENT PRIMARY KEY,
+     `key_value` VARCHAR(255) NOT NULL UNIQUE,
+     `service_id` INT,
+     `name` VARCHAR(255) NOT NULL,
+     `prefix` VARCHAR(50) DEFAULT 'KIWIPAZARI',
+     `max_amount` INT DEFAULT 1000,
+     `used_amount` INT DEFAULT 0,
+     `is_active` BOOLEAN DEFAULT TRUE,
+     `is_hidden` BOOLEAN DEFAULT FALSE,
+     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+   );
+
+   CREATE TABLE `orders` (
+     `id` INT AUTO_INCREMENT PRIMARY KEY,
+     `order_id` VARCHAR(255) NOT NULL UNIQUE,
+     `key_id` INT,
+     `service_id` INT,
+     `link` VARCHAR(500) NOT NULL,
+     `quantity` INT NOT NULL,
+     `status` VARCHAR(50) DEFAULT 'pending',
+     `external_order_id` VARCHAR(255) NULL,
+     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+   );
+
+   CREATE TABLE `admin_users` (
+     `id` INT AUTO_INCREMENT PRIMARY KEY,
+     `username` VARCHAR(50) NOT NULL UNIQUE,
+     `password` VARCHAR(255) NOT NULL,
+     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   );
+
+   CREATE TABLE `rate_limits` (
+     `id` INT AUTO_INCREMENT PRIMARY KEY,
+     `ip` VARCHAR(45) NOT NULL,
+     `action` VARCHAR(50) NOT NULL,
+     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   );
+
+   INSERT INTO `admin_users` (`username`, `password`) VALUES 
+   ('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+
+5. TEST ET
+==========
+- Ana sayfa: https://yourdomain.com/
+- Admin paneli: https://yourdomain.com/kiwi-management-portal
+- Kullanıcı: admin
+- Şifre: ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO
+
+6. GÜVENLİK
+===========
+Kurulum tamamlandıktan sonra:
+- setup-cpanel.php dosyasını sil
+- setup.php dosyasını sil
+
+SORUN GİDERME
+=============
+- "Access denied" hatası: Veritabanı bilgilerini kontrol et
+- "Table doesn't exist" hatası: SQL tabloları oluştur
+- "Permission denied" hatası: Dosya izinlerini kontrol et (755)
+
+DESTEK
+======
+Bu rehberdeki adımları sırasıyla takip edin. 
+Sorun yaşarsanız cPanel hosting sağlayıcınızla iletişime geçin.
