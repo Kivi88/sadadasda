@@ -1,10 +1,19 @@
--- KiWiPazari Database Setup
--- Bu dosyayı PostgreSQL veya MySQL veritabanınızda çalıştırın
+-- KiWiPazari Database Setup - MySQL Version
+-- Bu dosyayı MySQL veritabanınızda çalıştırın
+
+-- Rate limiting tablosu
+CREATE TABLE IF NOT EXISTS rate_limits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    identifier VARCHAR(255) NOT NULL UNIQUE,
+    attempts INT DEFAULT 0,
+    last_attempt INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- APIs tablosu
 CREATE TABLE IF NOT EXISTS apis (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
     base_url TEXT NOT NULL,
     api_key TEXT NOT NULL,
     services_endpoint TEXT,
@@ -16,54 +25,56 @@ CREATE TABLE IF NOT EXISTS apis (
 
 -- Services tablosu
 CREATE TABLE IF NOT EXISTS services (
-    id SERIAL PRIMARY KEY,
-    api_id INTEGER REFERENCES apis(id),
-    external_id TEXT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    api_id INT,
+    external_id VARCHAR(255),
     name TEXT NOT NULL,
-    platform TEXT,
-    category TEXT,
+    platform VARCHAR(255),
+    category VARCHAR(255),
     description TEXT,
-    min_quantity INTEGER DEFAULT 1,
-    max_quantity INTEGER DEFAULT 10000,
+    min_quantity INT DEFAULT 1,
+    max_quantity INT DEFAULT 10000,
     is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (api_id) REFERENCES apis(id) ON DELETE CASCADE
 );
 
 -- Keys tablosu
 CREATE TABLE IF NOT EXISTS keys (
-    id SERIAL PRIMARY KEY,
-    key_value TEXT NOT NULL UNIQUE,
-    name TEXT,
-    service_id INTEGER REFERENCES services(id),
-    max_amount INTEGER DEFAULT 1000,
-    used_amount INTEGER DEFAULT 0,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    key_value VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255),
+    service_id INT,
+    max_amount INT DEFAULT 1000,
+    used_amount INT DEFAULT 0,
     is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
 );
 
 -- Orders tablosu
 CREATE TABLE IF NOT EXISTS orders (
-    id SERIAL PRIMARY KEY,
-    order_id TEXT NOT NULL UNIQUE,
-    key_id INTEGER REFERENCES keys(id),
-    service_id INTEGER REFERENCES services(id),
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id VARCHAR(255) NOT NULL UNIQUE,
+    key_id INT,
+    service_id INT,
     link TEXT NOT NULL,
-    quantity INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending',
-    external_order_id TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    quantity INT NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    external_order_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (key_id) REFERENCES keys(id) ON DELETE CASCADE,
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
 );
 
 -- Indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_keys_key_value ON keys(key_value);
-CREATE INDEX IF NOT EXISTS idx_orders_order_id ON orders(order_id);
-CREATE INDEX IF NOT EXISTS idx_services_api_id ON services(api_id);
-CREATE INDEX IF NOT EXISTS idx_keys_service_id ON keys(service_id);
+CREATE INDEX idx_keys_key_value ON keys(key_value);
+CREATE INDEX idx_orders_order_id ON orders(order_id);
+CREATE INDEX idx_services_api_id ON services(api_id);
+CREATE INDEX idx_keys_service_id ON keys(service_id);
+CREATE INDEX idx_rate_limits_identifier ON rate_limits(identifier);
 
 -- Insert sample data (optional)
-INSERT INTO apis (name, base_url, api_key, services_endpoint, order_endpoint, status_endpoint, is_active) 
+INSERT IGNORE INTO apis (name, base_url, api_key, services_endpoint, order_endpoint, status_endpoint, is_active) 
 VALUES 
-('Sample API', 'https://api.example.com', 'sample-key', '/services', '/order', '/status', true)
-ON CONFLICT DO NOTHING;
-
-COMMIT;
+('Sample API', 'https://api.example.com', 'sample-key', '/services', '/order', '/status', true);

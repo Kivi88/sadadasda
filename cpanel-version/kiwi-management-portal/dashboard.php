@@ -2,17 +2,31 @@
 require_once '../config.php';
 requireAdmin();
 
-// Get statistics
-$stats = [
-    'apis' => $pdo->query("SELECT COUNT(*) FROM apis")->fetchColumn(),
-    'services' => $pdo->query("SELECT COUNT(*) FROM services")->fetchColumn(),
-    'keys' => $pdo->query("SELECT COUNT(*) FROM keys")->fetchColumn(),
-    'orders' => $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn(),
-    'active_keys' => $pdo->query("SELECT COUNT(*) FROM keys WHERE is_active = 1")->fetchColumn(),
-    'pending_orders' => $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pending'")->fetchColumn(),
-    'processing_orders' => $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'processing'")->fetchColumn(),
-    'completed_orders' => $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'completed'")->fetchColumn()
-];
+// Get statistics with error handling
+try {
+    $stats = [
+        'apis' => $pdo->query("SELECT COUNT(*) FROM apis")->fetchColumn() ?: 0,
+        'services' => $pdo->query("SELECT COUNT(*) FROM services")->fetchColumn() ?: 0,
+        'keys' => $pdo->query("SELECT COUNT(*) FROM keys")->fetchColumn() ?: 0,
+        'orders' => $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn() ?: 0,
+        'active_keys' => $pdo->query("SELECT COUNT(*) FROM keys WHERE is_active = 1")->fetchColumn() ?: 0,
+        'pending_orders' => $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'pending'")->fetchColumn() ?: 0,
+        'processing_orders' => $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'processing'")->fetchColumn() ?: 0,
+        'completed_orders' => $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'completed'")->fetchColumn() ?: 0
+    ];
+} catch (Exception $e) {
+    // If tables don't exist, set default values
+    $stats = [
+        'apis' => 0,
+        'services' => 0,
+        'keys' => 0,
+        'orders' => 0,
+        'active_keys' => 0,
+        'pending_orders' => 0,
+        'processing_orders' => 0,
+        'completed_orders' => 0
+    ];
+}
 
 $csrf_token = generateCSRFToken();
 ?>
