@@ -13,7 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = validateInput($_POST['username']);
     $password = $_POST['password'];
     
-    if (!checkRateLimit($_SERVER['REMOTE_ADDR'], 'admin_login')) {
+    $ip = $_SERVER['REMOTE_ADDR'];
+    if (!checkRateLimit($ip, 'admin_login')) {
         $error = 'Çok fazla deneme yaptınız. Lütfen daha sonra tekrar deneyin.';
     } else {
         $db = Database::getInstance()->getConnection();
