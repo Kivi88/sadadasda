@@ -247,6 +247,11 @@ npm run dev      # Start development server
   - Updated all admin routing and redirects to use new secure path
   - Enhanced security by making admin access path less discoverable
   - User requested: "hani /admin yazınca admin şifre girin e atıyorya url yi gizlesek"
+- July 08, 2025. **Service Name Privacy Enhancement**:
+  - Removed detailed service name display from key validation page
+  - Now shows only platform and category instead of full service description
+  - Enhanced user privacy by hiding specific service details
+  - User requested: "servis adı gözükmesin"
 
 ## User Preferences
 

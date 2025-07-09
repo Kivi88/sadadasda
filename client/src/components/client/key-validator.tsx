@@ -99,12 +99,12 @@ export default function KeyValidator() {
           
           {validatedKey && validatedService && (
             <div className="space-y-4 mt-4">
-              <div className="p-4 bg-green-50 rounded-lg">
-                <p className="text-sm text-green-800">
-                  <strong>Servis:</strong> {validatedService.name}
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <p className="text-sm text-green-600 dark:text-green-400">
+                  Platform: {validatedService.platform} | Kategori: {validatedService.category}
                 </p>
-                <p className="text-sm text-green-600 mt-1">
-                  Kalan miktar: {(validatedKey.maxAmount || 1000) - (validatedKey.usedAmount || 0)}
+                <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                  Kalan kullanım: {(validatedKey.maxAmount || 1000) - (validatedKey.usedAmount || 0)}
                 </p>
               </div>
               
