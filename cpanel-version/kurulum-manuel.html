@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KiWiPazari Manuel Kurulum</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .logo {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .step-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #5a67d8;
+        }
+        ol li, ul li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">KIWIPAZARI</div>
+        <div class="subtitle">Manuel Kurulum Kılavuzu</div>
+
+        <div class="alert alert-warning">
+            <strong>Bilgi:</strong> Hosting sağlayıcınız güvenlik nedeniyle bazı PHP fonksiyonlarını devre dışı bırakmış. 
+            Bu durumda manuel kurulum yapmamız gerekiyor.
+        </div>
+
+        <div class="step">
+            <div class="step-title">1️⃣ Veritabanı Ayarları</div>
+            <p>.env dosyasını oluşturun veya düzenleyin:</p>
+            <div class="code">
+# .env dosyası içeriği
+DATABASE_URL=mysql://kullanici:sifre@localhost:3306/veritabani_adi
+PORT=3000
+NODE_ENV=production
+SESSION_SECRET=gizli-anahtar-buraya-yazin
+SECURE_COOKIES=true
+            </div>
+            <p><strong>Not:</strong> Veritabanı bilgilerinizi cPanel'den alabilirsiniz.</p>
+        </div>
+
+        <div class="step">
+            <div class="step-title">2️⃣ Veritabanı Tablolarını Oluşturun</div>
+            <ol>
+                <li>cPanel'de <strong>phpMyAdmin</strong>'e gidin</li>
+                <li>Veritabanınızı seçin</li>
+                <li><code>install.sql</code> dosyasını içe aktarın (Import)</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <div class="step-title">3️⃣ Node.js Bağımlılıklarını Yükleyin</div>
+            
+            <h4>Yöntem 1: cPanel Node.js Selector (Önerilen)</h4>
+            <ol>
+                <li>cPanel'de <strong>Node.js Selector</strong>'a gidin</li>
+                <li>Node.js'i aktifleştirin (v16+ gerekli)</li>
+                <li>Uygulama klasörünü seçin</li>
+                <li><strong>"Run NPM Install"</strong> butonuna tıklayın</li>
+            </ol>
+
+            <h4>Yöntem 2: Terminal/SSH</h4>
+            <div class="code">
+cd /home/kullanici/public_html
+npm install --production
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-title">4️⃣ Uygulamayı Başlatın</div>
+            
+            <h4>cPanel Node.js Selector ile:</h4>
+            <ol>
+                <li><strong>Startup File:</strong> <code>index.js</code></li>
+                <li><strong>Application Mode:</strong> Production</li>
+                <li><strong>"Start"</strong> butonuna tıklayın</li>
+            </ol>
+
+            <h4>Terminal ile:</h4>
+            <div class="code">
+node index.js
+# veya PM2 ile
+pm2 start index.js --name kiwipazari
+            </div>
+        </div>
+
+        <div class="step">
+            <div class="step-title">5️⃣ Domain/Subdomain Ayarları</div>
+            <ol>
+                <li>cPanel'de <strong>Subdomains</strong> bölümüne gidin</li>
+                <li>Yeni subdomain oluşturun (örn: api.yourdomain.com)</li>
+                <li>Document Root'u uygulama klasörünüze ayarlayın</li>
+                <li>Port yönlendirmesi yapın (3000 portunu 80'e)</li>
+            </ol>
+        </div>
+
+        <div class="alert alert-success">
+            <strong>Erişim Bilgileri:</strong><br>
+            • <strong>Ana Site:</strong> https://yourdomain.com<br>
+            • <strong>Admin Panel:</strong> https://yourdomain.com/kiwi-management-portal<br>
+            • <strong>Admin Şifre:</strong> ucFMkvJ5Tngq7QCN9Dl31edSWaPAmIRxfGwL62ih4U8jb0VosKHtO
+        </div>
+
+        <div class="step">
+            <div class="step-title">🔧 Sorun Giderme</div>
+            <ul>
+                <li><strong>Port hatası:</strong> .env dosyasında farklı port deneyin (3001, 8080 vb.)</li>
+                <li><strong>Veritabanı hatası:</strong> DATABASE_URL'i kontrol edin</li>
+                <li><strong>Node.js bulunamadı:</strong> cPanel Node.js Selector'dan aktifleştirin</li>
+                <li><strong>İzin hatası:</strong> Dosya izinlerini 755'e ayarlayın</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/" class="btn">Ana Sayfaya Git</a>
+            <a href="/kiwi-management-portal" class="btn" style="margin-left: 10px;">Admin Paneli</a>
+        </div>
+    </div>
+</body>
+</html>

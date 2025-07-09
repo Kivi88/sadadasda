@@ -173,13 +173,26 @@ $action = isset($_POST['action']) ? $_POST['action'] : '';
                 // Sistem kontrolü
                 $checks = [];
                 
-                // Node.js kontrolü
-                exec('node --version 2>&1', $node_output, $node_return);
-                $checks['node'] = $node_return === 0;
+                // Fonksiyon kontrolü
+                $exec_available = function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')));
                 
-                // NPM kontrolü  
-                exec('npm --version 2>&1', $npm_output, $npm_return);
-                $checks['npm'] = $npm_return === 0;
+                if ($exec_available) {
+                    // Node.js kontrolü
+                    exec('node --version 2>&1', $node_output, $node_return);
+                    $checks['node'] = $node_return === 0;
+                    $node_version = $checks['node'] ? trim($node_output[0]) : 'Bulunamadı';
+                    
+                    // NPM kontrolü  
+                    exec('npm --version 2>&1', $npm_output, $npm_return);
+                    $checks['npm'] = $npm_return === 0;
+                    $npm_version = $checks['npm'] ? trim($npm_output[0]) : 'Bulunamadı';
+                } else {
+                    // exec() devre dışı - manuel kontrol gerekli
+                    $checks['node'] = true; // Kullanıcı manuel kontrol etsin
+                    $checks['npm'] = true;
+                    $node_version = 'Manuel kontrol gerekli';
+                    $npm_version = 'Manuel kontrol gerekli';
+                }
                 
                 // package.json kontrolü
                 $checks['package'] = file_exists('package.json');
@@ -190,11 +203,18 @@ $action = isset($_POST['action']) ? $_POST['action'] : '';
 
                 <h4>Sistem Durumu:</h4>
                 <ul style="margin: 15px 0; padding-left: 20px;">
-                    <li><?= $checks['node'] ? '✅' : '❌' ?> Node.js <?= $checks['node'] ? '(' . trim($node_output[0]) . ')' : '(Bulunamadı)' ?></li>
-                    <li><?= $checks['npm'] ? '✅' : '❌' ?> NPM <?= $checks['npm'] ? '(' . trim($npm_output[0]) . ')' : '(Bulunamadı)' ?></li>
+                    <li><?= $checks['node'] ? '✅' : '❌' ?> Node.js (<?= $node_version ?>)</li>
+                    <li><?= $checks['npm'] ? '✅' : '❌' ?> NPM (<?= $npm_version ?>)</li>
                     <li><?= $checks['package'] ? '✅' : '❌' ?> package.json</li>
                     <li><?= $checks['writable'] ? '✅' : '❌' ?> Yazma İzni</li>
                 </ul>
+
+                <?php if (!$exec_available): ?>
+                <div class="alert alert-warning">
+                    <strong>Bilgi:</strong> exec() fonksiyonu devre dışı. Bu normal bir durumdur. 
+                    Node.js'in aktif olduğundan emin olun ve kuruluma devam edin.
+                </div>
+                <?php endif; ?>
 
                 <?php $all_checks_passed = !in_array(false, $checks); ?>
                 
@@ -296,24 +316,51 @@ $action = isset($_POST['action']) ? $_POST['action'] : '';
                     <p>Bu işlem birkaç dakika sürebilir. Lütfen bekleyin...</p>
                     
                     <?php
-                    echo '<div class="code">';
-                    echo 'npm install --production<br><br>';
+                    $exec_available = function_exists('exec') && !in_array('exec', explode(',', ini_get('disable_functions')));
                     
-                    // NPM install komutunu çalıştır
-                    $install_command = 'npm install --production 2>&1';
-                    exec($install_command, $install_output, $install_return);
-                    
-                    foreach ($install_output as $line) {
-                        echo htmlspecialchars($line) . '<br>';
-                    }
-                    echo '</div>';
-                    
-                    if ($install_return === 0) {
-                        echo '<div class="alert alert-success"><strong>Başarılı!</strong> Bağımlılıklar yüklendi.</div>';
-                        echo '<form method="get"><input type="hidden" name="step" value="4"><button type="submit" class="btn">Sonraki Adım →</button></form>';
+                    if ($exec_available) {
+                        echo '<div class="code">';
+                        echo 'npm install --production<br><br>';
+                        
+                        // NPM install komutunu çalıştır
+                        $install_command = 'npm install --production 2>&1';
+                        exec($install_command, $install_output, $install_return);
+                        
+                        foreach ($install_output as $line) {
+                            echo htmlspecialchars($line) . '<br>';
+                        }
+                        echo '</div>';
+                        
+                        if ($install_return === 0) {
+                            echo '<div class="alert alert-success"><strong>Başarılı!</strong> Bağımlılıklar yüklendi.</div>';
+                            echo '<form method="get"><input type="hidden" name="step" value="4"><button type="submit" class="btn">Sonraki Adım →</button></form>';
+                        } else {
+                            echo '<div class="alert alert-error"><strong>Hata!</strong> Bağımlılıklar yüklenemedi.</div>';
+                            echo '<button onclick="history.back()" class="btn">Geri Dön</button>';
+                        }
                     } else {
-                        echo '<div class="alert alert-error"><strong>Hata!</strong> Bağımlılıklar yüklenemedi.</div>';
-                        echo '<button onclick="history.back()" class="btn">Geri Dön</button>';
+                        // exec() kullanılamıyor - manuel kurulum talimatları
+                        echo '<div class="alert alert-warning">';
+                        echo '<strong>exec() fonksiyonu devre dışı.</strong><br>';
+                        echo 'Bağımlılıkları manuel olarak yüklemeniz gerekiyor.';
+                        echo '</div>';
+                        
+                        echo '<div class="code">';
+                        echo '<strong>Terminal/SSH ile bağlanın ve şu komutu çalıştırın:</strong><br><br>';
+                        echo 'cd ' . getcwd() . '<br>';
+                        echo 'npm install --production<br><br>';
+                        echo '<strong>Veya cPanel Node.js Selector kullanın:</strong><br>';
+                        echo '1. cPanel Node.js Selector\'a gidin<br>';
+                        echo '2. Bu klasörü seçin<br>';
+                        echo '3. "Run NPM Install" butonuna tıklayın<br>';
+                        echo '</div>';
+                        
+                        // Kullanıcının tamamladığını onaylamasını bekle
+                        echo '<div class="alert alert-warning">';
+                        echo 'Bağımlılıkları yükledikten sonra devam edebilirsiniz.';
+                        echo '</div>';
+                        
+                        echo '<form method="get"><input type="hidden" name="step" value="4"><button type="submit" class="btn">Bağımlılıkları Yükledim, Devam Et →</button></form>';
                     }
                     ?>
                 </div>
