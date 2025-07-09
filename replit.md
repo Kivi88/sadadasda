@@ -237,6 +237,11 @@ npm run dev      # Start development server
   - Added larger form inputs (h-11), better spacing between sections, and shadow effects
   - Project now fully operational in Replit environment with clean, professional interface
   - All migration checklist items completed successfully
+- July 08, 2025. **Key Download Format Change**:
+  - Changed key download format from CSV to TXT as requested by user
+  - TXT files now contain only key values (one per line) for simpler processing
+  - Updated backend response headers and frontend download filename
+  - User requested: "şimdi key indir csv olarak değilde txt olarak versin"
 
 ## User Preferences
 

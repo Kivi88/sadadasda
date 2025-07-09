@@ -142,7 +142,7 @@ export default function KeyManagement() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${keyName}_keys.csv`;
+      a.download = `${keyName}_keys.txt`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -337,7 +337,7 @@ export default function KeyManagement() {
                   className="w-full h-11"
                 />
                 <p className="text-sm text-muted-foreground mt-3">
-                  Bu ada sahip tüm keyler CSV dosyası olarak indirilecek
+                  Bu ada sahip tüm keyler TXT dosyası olarak indirilecek
                 </p>
               </div>
               

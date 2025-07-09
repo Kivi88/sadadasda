@@ -644,17 +644,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: key.createdAt
       }));
 
-      // CSV formatında hazırla
-      const csvHeaders = 'Key Value,Name,Max Amount,Used Amount,Remaining Amount,Status,Created At\n';
-      const csvData = keyData.map(key => 
-        `${key.keyValue},${key.name},${key.maxAmount},${key.usedAmount},${key.remainingAmount},${key.isActive ? 'Active' : 'Inactive'},${key.createdAt}`
-      ).join('\n');
+      // TXT formatında hazırla - sadece key değerleri
+      const txtContent = keyData.map(key => key.keyValue).join('\n');
 
-      const csvContent = csvHeaders + csvData;
-
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="${keyName}_keys.csv"`);
-      res.send(csvContent);
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="${keyName}_keys.txt"`);
+      res.send(txtContent);
       
     } catch (error) {
       console.error("Error downloading keys:", error);
