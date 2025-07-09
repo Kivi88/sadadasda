@@ -1,125 +1,111 @@
 <?php
-/**
- * KiWiPazari Configuration File
- * Veritabanı ve sistem ayarları
- */
-
-// Veritabanı ayarları
+// Database configuration
 define('DB_HOST', 'localhost');
+define('DB_NAME', 'kiwipazari');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'kiwipazari');
 
-// Sistem ayarları
-define('SITE_NAME', 'KiWiPazari');
-define('ADMIN_PATH', '/kiwi-management-portal');
-define('DEFAULT_KEY_PREFIX', 'KIWIPAZARI');
+// Admin credentials
+define('ADMIN_USERNAME', 'admin');
+define('ADMIN_PASSWORD', 'admin123');
 
-// Güvenlik ayarları
-define('SESSION_TIMEOUT', 3600); // 1 saat
-define('RATE_LIMIT_ATTEMPTS', 15);
-define('RATE_LIMIT_WINDOW', 900); // 15 dakika
+// Security settings
+define('SITE_URL', 'https://yoursite.com');
+define('SESSION_TIMEOUT', 3600); // 1 hour
 
-// Hata raporlama
+// Error reporting (set to 0 in production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Oturum başlat
-session_start();
+// Start session if not already started
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Veritabanı bağlantısı
-class Database {
-    private static $instance = null;
-    private $connection;
+// Database connection function
+function getDatabase() {
+    static $pdo = null;
     
-    private function __construct() {
-        $this->connection = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-        
-        if ($this->connection->connect_error) {
-            die("Veritabanı bağlantısı başarısız: " . $this->connection->connect_error);
+    if ($pdo === null) {
+        try {
+            $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+            $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ]);
+        } catch (PDOException $e) {
+            die("Database connection failed: " . $e->getMessage());
         }
-        
-        $this->connection->set_charset("utf8mb4");
     }
     
-    public static function getInstance() {
-        if (self::$instance === null) {
-            self::$instance = new Database();
-        }
-        return self::$instance;
-    }
-    
-    public function getConnection() {
-        return $this->connection;
-    }
+    return $pdo;
 }
 
-// Güvenlik fonksiyonları
-function sanitize($data) {
-    return htmlspecialchars(strip_tags(trim($data)));
-}
-
-function validateInput($data, $type = 'string') {
-    switch ($type) {
-        case 'int':
-            return filter_var($data, FILTER_VALIDATE_INT);
-        case 'email':
-            return filter_var($data, FILTER_VALIDATE_EMAIL);
-        case 'url':
-            return filter_var($data, FILTER_VALIDATE_URL);
-        default:
-            return sanitize($data);
-    }
-}
-
-function checkRateLimit($ip, $action = 'general') {
-    $db = Database::getInstance()->getConnection();
-    $window = RATE_LIMIT_WINDOW; // Sabit değeri değişkene atayalım
-    $stmt = $db->prepare("SELECT COUNT(*) as attempts FROM rate_limits WHERE ip = ? AND action = ? AND created_at > DATE_SUB(NOW(), INTERVAL ? SECOND)");
-    $stmt->bind_param("ssi", $ip, $action, $window);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
-    
-    if ($row['attempts'] >= RATE_LIMIT_ATTEMPTS) {
-        return false;
-    }
-    
-    // Deneme kaydını ekle
-    $stmt = $db->prepare("INSERT INTO rate_limits (ip, action) VALUES (?, ?)");
-    $stmt->bind_param("ss", $ip, $action);
-    $stmt->execute();
-    
-    return true;
-}
-
-function isAdmin() {
+// Check if admin is logged in
+function isAdminLoggedIn() {
     return isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
 }
 
-function requireAdmin() {
-    if (!isAdmin()) {
+// Redirect to login if not logged in
+function requireAdminLogin() {
+    if (!isAdminLoggedIn()) {
         header('Location: admin-login.php');
         exit;
     }
 }
 
-// JSON response helper
-function jsonResponse($data, $status = 200) {
-    http_response_code($status);
-    header('Content-Type: application/json');
-    echo json_encode($data);
+// Logout function
+function adminLogout() {
+    session_destroy();
+    header('Location: admin-login.php');
     exit;
 }
 
-// Rate limiting tablosunu oluştur
-$db = Database::getInstance()->getConnection();
-$rate_limit_table = "CREATE TABLE IF NOT EXISTS rate_limits (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ip VARCHAR(45) NOT NULL,
-    action VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_ip_action_time (ip, action, created_at)
-)";
-$db->query($rate_limit_table);
+// CSRF protection
+function generateCSRFToken() {
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function validateCSRFToken($token) {
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+// Sanitize input
+function sanitizeInput($input) {
+    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+}
+
+// Rate limiting (simple implementation)
+function checkRateLimit($action, $limit = 5, $window = 900) {
+    $ip = $_SERVER['REMOTE_ADDR'];
+    $key = $action . '_' . $ip;
+    
+    if (!isset($_SESSION['rate_limit'])) {
+        $_SESSION['rate_limit'] = [];
+    }
+    
+    $now = time();
+    
+    if (!isset($_SESSION['rate_limit'][$key])) {
+        $_SESSION['rate_limit'][$key] = ['count' => 0, 'reset' => $now + $window];
+    }
+    
+    $data = $_SESSION['rate_limit'][$key];
+    
+    if ($now > $data['reset']) {
+        $_SESSION['rate_limit'][$key] = ['count' => 0, 'reset' => $now + $window];
+        $data = $_SESSION['rate_limit'][$key];
+    }
+    
+    if ($data['count'] >= $limit) {
+        return false;
+    }
+    
+    $_SESSION['rate_limit'][$key]['count']++;
+    return true;
+}
 ?>
