@@ -613,24 +613,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Key download route - keyName'e göre tüm keyleri indir
+  // Key download route - servis adına göre tüm keyleri indir
   app.post("/api/keys/download", [
-    body('keyName').isLength({ min: 1, max: 100 }).trim().escape(),
+    body('serviceName').isLength({ min: 1, max: 500 }).trim().escape(),
   ], async (req, res) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ message: "Geçersiz key adı" });
+        return res.status(400).json({ message: "Geçersiz servis adı" });
       }
 
-      const { keyName } = req.body;
-      const allKeys = await storage.getKeys();
+      const { serviceName } = req.body;
       
-      // Aynı isme sahip keyleri filtrele
-      const matchingKeys = allKeys.filter(key => key.name === keyName);
+      // Önce servis adına göre servisi bul
+      const allServices = await storage.getServices();
+      const targetService = allServices.find(service => service.name === serviceName);
+      
+      if (!targetService) {
+        return res.status(404).json({ message: "Bu servis adına sahip servis bulunamadı" });
+      }
+      
+      // Servise ait tüm keyleri bul
+      const allKeys = await storage.getKeys();
+      const matchingKeys = allKeys.filter(key => key.serviceId === targetService.id);
       
       if (matchingKeys.length === 0) {
-        return res.status(404).json({ message: "Bu isimde key bulunamadı" });
+        return res.status(404).json({ message: "Bu servis için oluşturulmuş key bulunamadı" });
       }
 
       // Key verilerini hazırla
@@ -647,8 +655,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // TXT formatında hazırla - sadece key değerleri
       const txtContent = keyData.map(key => key.keyValue).join('\n');
 
+      // Dosya adı için servis adını temizle
+      const cleanServiceName = serviceName.replace(/[^a-zA-Z0-9]/g, '_');
+      
       res.setHeader('Content-Type', 'text/plain');
-      res.setHeader('Content-Disposition', `attachment; filename="${keyName}_keys.txt"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${cleanServiceName}_keys.txt"`);
       res.send(txtContent);
       
     } catch (error) {

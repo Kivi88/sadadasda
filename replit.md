@@ -253,6 +253,12 @@ npm run dev      # Start development server
   - Now shows only platform and category instead of full service description
   - Enhanced user privacy by completely hiding specific service details
   - User requested: "servis adı gözükmesin"
+- July 08, 2025. **Key Download by Service Name**:
+  - Changed key download system from key name to service name based filtering
+  - Admin can now download all keys created for a specific service
+  - Updated backend API to accept serviceName instead of keyName
+  - Enhanced frontend with service name input and proper file naming
+  - User requested: "servis adı ile mesela Youtube Video Likes | Faster servis ile kurulmuş keyler inecek"
 
 ## User Preferences
 

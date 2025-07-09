@@ -20,7 +20,7 @@ export default function KeyManagement() {
   const [maxAmount, setMaxAmount] = useState(1000);
   const [hiddenKeys, setHiddenKeys] = useState<Set<number>>(new Set());
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
-  const [downloadKeyName, setDownloadKeyName] = useState("");
+  const [downloadServiceName, setDownloadServiceName] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const { toast } = useToast();
@@ -124,13 +124,13 @@ export default function KeyManagement() {
   });
 
   const downloadKeysMutation = useMutation({
-    mutationFn: async (keyName: string) => {
+    mutationFn: async (serviceName: string) => {
       const response = await fetch("/api/keys/download", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ keyName }),
+        body: JSON.stringify({ serviceName }),
       });
 
       if (!response.ok) {
@@ -142,7 +142,16 @@ export default function KeyManagement() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${keyName}_keys.txt`;
+      // Dosya adını backend'den gelen content-disposition header'ından al
+      const contentDisposition = response.headers.get('content-disposition');
+      let fileName = 'service_keys.txt';
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="([^"]+)"/);
+        if (fileNameMatch) {
+          fileName = fileNameMatch[1];
+        }
+      }
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -153,7 +162,7 @@ export default function KeyManagement() {
         title: "Başarılı",
         description: "Keyler başarıyla indirildi",
       });
-      setDownloadKeyName("");
+      setDownloadServiceName("");
     },
     onError: (error) => {
       toast({
@@ -328,33 +337,36 @@ export default function KeyManagement() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label htmlFor="downloadKeyName" className="text-sm font-medium mb-2 block">Key Adı</Label>
+                <Label htmlFor="downloadServiceName" className="text-sm font-medium mb-2 block">Servis Adı</Label>
                 <Input
-                  id="downloadKeyName"
-                  value={downloadKeyName}
-                  onChange={(e) => setDownloadKeyName(e.target.value)}
-                  placeholder="İndirmek istediğiniz key adını girin..."
+                  id="downloadServiceName"
+                  value={downloadServiceName}
+                  onChange={(e) => setDownloadServiceName(e.target.value)}
+                  placeholder="İndirmek istediğiniz servis adını girin..."
                   className="w-full h-11"
                 />
                 <p className="text-sm text-muted-foreground mt-3">
-                  Bu ada sahip tüm keyler TXT dosyası olarak indirilecek
+                  Bu servis için oluşturulmuş tüm keyler TXT dosyası olarak indirilecek
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Örnek: "Youtube Video Likes | Faster | Max 1M | Low Drop | 30 Days Refill ♻️"
                 </p>
               </div>
               
               <div className="pt-2">
                 <Button 
                   onClick={() => {
-                    if (!downloadKeyName.trim()) {
+                    if (!downloadServiceName.trim()) {
                       toast({
                         title: "Hata",
-                        description: "Lütfen key adını girin",
+                        description: "Lütfen servis adını girin",
                         variant: "destructive",
                       });
                       return;
                     }
-                    downloadKeysMutation.mutate(downloadKeyName.trim());
+                    downloadKeysMutation.mutate(downloadServiceName.trim());
                   }}
-                  disabled={downloadKeysMutation.isPending || !downloadKeyName.trim()}
+                  disabled={downloadKeysMutation.isPending || !downloadServiceName.trim()}
                   className="btn-primary h-11 px-6"
                   size="lg"
                 >
