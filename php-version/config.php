@@ -74,8 +74,9 @@ function validateInput($data, $type = 'string') {
 
 function checkRateLimit($ip, $action = 'general') {
     $db = Database::getInstance()->getConnection();
+    $window = RATE_LIMIT_WINDOW; // Sabit değeri değişkene atayalım
     $stmt = $db->prepare("SELECT COUNT(*) as attempts FROM rate_limits WHERE ip = ? AND action = ? AND created_at > DATE_SUB(NOW(), INTERVAL ? SECOND)");
-    $stmt->bind_param("ssi", $ip, $action, RATE_LIMIT_WINDOW);
+    $stmt->bind_param("ssi", $ip, $action, $window);
     $stmt->execute();
     $result = $stmt->get_result();
     $row = $result->fetch_assoc();
