@@ -1,0 +1,35 @@
+{
+  "name": "kiwipazari-cpanel",
+  "version": "1.0.0",
+  "description": "KiWiPazari API Key Management System for cPanel",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "echo 'Build completed - files ready for cPanel'",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "express-session": "^1.17.3",
+    "express-validator": "^7.0.1",
+    "pg": "^8.11.3",
+    "drizzle-orm": "^0.29.1",
+    "bcryptjs": "^2.4.3",
+    "csurf": "^1.11.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "api",
+    "key-management",
+    "cpanel",
+    "nodejs",
+    "express"
+  ],
+  "author": "KiWiPazari",
+  "license": "MIT"
+}

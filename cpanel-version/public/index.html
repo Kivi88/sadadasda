@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KiWiPazari - API Key Management</title>
+    <meta name="description" content="KiWiPazari API key management system. Manage your API keys, services, and orders efficiently.">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1f2937;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 500px;
+        }
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #60a5fa;
+        }
+        .message {
+            margin-bottom: 2rem;
+            color: #d1d5db;
+            line-height: 1.6;
+        }
+        .loading {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #374151;
+            border-radius: 50%;
+            border-top-color: #60a5fa;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .error {
+            background: #ef4444;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">KIWIPAZARI</div>
+        <div class="message">
+            Sistem başlatılıyor...
+        </div>
+        <div class="loading"></div>
+        <div id="error" class="error" style="display: none;">
+            <strong>Hata:</strong> 
+            <span id="error-message">Sistem başlatılamadı. Lütfen yöneticinizle iletişime geçin.</span>
+        </div>
+    </div>
+
+    <script>
+        // Simple loading screen that redirects to the main app
+        setTimeout(() => {
+            // Try to fetch the main app
+            fetch('/api/stats')
+                .then(response => {
+                    if (!response.ok && response.status !== 401) {
+                        throw new Error('Server not responding');
+                    }
+                    // Server is running, redirect to main app
+                    window.location.href = '/';
+                })
+                .catch(error => {
+                    // Show error message
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('error-message').textContent = 
+                        'Sunucu henüz başlatılmamış. Lütfen birkaç dakika bekleyin ve sayfayı yenileyin.';
+                    document.querySelector('.loading').style.display = 'none';
+                });
+        }, 2000);
+    </script>
+</body>
+</html>
