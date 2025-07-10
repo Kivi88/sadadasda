@@ -1036,7 +1036,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const activeApis = apis.filter(api => api.isActive).length;
       const completedOrders = orders.filter(order => order.status === "completed").length;
-      const successRate = orders.length > 0 ? ((completedOrders / orders.length) * 100).toFixed(1) : "0";
+      const successRate = orders.length > 0 ? ((completedOrders / orders.length) * 100).toFixed(1) : "0.0";
 
       res.json({
         totalKeys: keys.length,
